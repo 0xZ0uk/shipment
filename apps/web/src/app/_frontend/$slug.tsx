@@ -1,5 +1,6 @@
 import { createFileRoute, notFound, redirect } from '@tanstack/react-router'
 
+import { preloadBlocks } from '@/blocks/components'
 import { NotFound } from '@/components/NotFound'
 import { PageTemplate } from '@/components/PageTemplate'
 import { pageHead } from '@/utilities/pageHead'
@@ -37,6 +38,9 @@ export const Route = createFileRoute('/_frontend/$slug')({
 
       throw notFound()
     }
+
+    // The page's block components, so it renders them (and hydrates) without waiting for chunks.
+    await preloadBlocks(data.page.layout)
 
     return data
   },
