@@ -9,6 +9,8 @@ export default [
       'cloudflare-env.d.ts',
       'dist/',
       'src/app/_payload/importMap.js',
+      // Vendored Stageshow kit, kept as upstream wrote it (see its README).
+      'src/components/Mockups/kit/',
       'src/db/migrations/',
       'src/payload-types.ts',
       'src/routeTree.gen.ts',

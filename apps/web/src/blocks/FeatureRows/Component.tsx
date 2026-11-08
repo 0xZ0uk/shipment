@@ -4,6 +4,7 @@ import type { FeatureRowsBlock as FeatureRowsBlockProps } from '@/payload-types'
 
 import { BlockMedia } from '@/components/Media/BlockMedia'
 import { CMSLink } from '@/components/Link'
+import { Illustration, isIllustration } from '@/components/Mockups/Illustration'
 import RichText from '@/components/RichText'
 import { SectionHeading } from '@/components/SectionHeading'
 import { cn } from '@/utilities/ui'
@@ -35,13 +36,20 @@ export const FeatureRowsBlock: React.FC<FeatureRowsBlockProps> = ({
                 className="grid items-center gap-8 md:grid-cols-2 md:gap-12 lg:gap-20"
                 key={row.id ?? index}
               >
-                <BlockMedia
-                  className={cn(
-                    'aspect-[4/3] w-full rounded-xl border',
-                    mediaOnRight && 'md:order-last',
-                  )}
-                  resource={row.media}
-                />
+                {isIllustration(row.illustration) ? (
+                  <Illustration
+                    className={cn(mediaOnRight && 'md:order-last')}
+                    name={row.illustration}
+                  />
+                ) : (
+                  <BlockMedia
+                    className={cn(
+                      'aspect-[4/3] w-full rounded-xl border',
+                      mediaOnRight && 'md:order-last',
+                    )}
+                    resource={row.media}
+                  />
+                )}
                 <div className="flex max-w-xl flex-col items-start gap-4">
                   {row.eyebrow && <p className="text-sm font-medium text-brand">{row.eyebrow}</p>}
                   {row.title && (

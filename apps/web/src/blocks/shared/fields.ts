@@ -11,6 +11,12 @@ import {
   lexicalEditor,
 } from '@payloadcms/richtext-lexical'
 
+import {
+  illustrationNames,
+  illustrations,
+  type IllustrationSlot,
+} from '@/components/Mockups/options'
+
 import { iconLabel, iconNames } from './icons'
 import type { BlockVariant } from './meta'
 
@@ -119,6 +125,29 @@ export const mediaField = (overrides: Partial<Omit<UploadField, 'relationTo' | '
     relationTo: 'media',
     ...overrides,
   }) as UploadField
+
+/**
+ * A product mockup drawn in code (`@/components/Mockups`), shown instead of the media. Render
+ * with `<Illustration>`; `slots` limits the choice to mockups designed for the block's space.
+ */
+export const illustrationField = ({
+  slots = ['card', 'wide'],
+  ...overrides
+}: { slots?: IllustrationSlot[] } & Partial<
+  Omit<SelectField, 'hasMany' | 'name' | 'options' | 'type'>
+> = {}): SelectField =>
+  ({
+    name: 'illustration',
+    type: 'select',
+    options: illustrationNames
+      .filter((name) => (slots as readonly string[]).includes(illustrations[name].slot))
+      .map((name) => ({ label: illustrations[name].label, value: name })),
+    ...overrides,
+    admin: {
+      description: 'A product mockup drawn in code, shown instead of the image or video.',
+      ...overrides.admin,
+    },
+  }) as SelectField
 
 type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4'
 

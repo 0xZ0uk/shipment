@@ -1,0 +1,52 @@
+/* Shipment's two looks, for every mockup stage: the Payload admin (`.sh-admin`) and the
+   site's own frontend (`.sh-site`, the shadcn tokens in styles.css). Values are measured
+   from the running app, so the mockups read as the product, not as a generic mock. */
+
+.sh-admin .ss-stage,
+.sh-site .ss-stage {
+  --ss-font:
+    'Inter Variable', Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ss-surface: #ffffff;
+  --ss-line: #e6e6e6;
+  --ss-line-faint: #f0f0f0;
+  --ss-text-strong: #222222;
+  --ss-text: #5c5c5c;
+  --ss-text-faint: #8f8f8f;
+  --ss-icon: #4d4d4d;
+  --ss-icon-faint: #9a9a9a;
+  --ss-success: #009951;
+  --ss-success-soft: #e3f5ec;
+  --ss-success-text: #007a41;
+  --ss-radius-sm: 4px;
+  --ss-radius-md: 4px;
+  --ss-radius-lg: 6px;
+  /* The ground of a mockup in a card: the section's muted token, so it follows dark sections. */
+  --sh-well: var(--muted, #f3f4f7);
+}
+
+/* Payload's admin: Payload blue for focus and tabs, a near-black primary button, 4px corners. */
+.sh-admin .ss-stage {
+  --ss-accent: #007be5;
+  --ss-accent-soft: #e5f4ff;
+  --ss-accent-text: #0062b8;
+  --sh-primary: #222222;
+  --sh-primary-hover: #3a3a3a;
+  --sh-disabled: #dcdcdc;
+  --sh-row: #f5f5f5;
+  --sh-row-line: #ececec;
+}
+
+/* The site: the brand blue, cool neutrals, Inter. */
+.sh-site .ss-stage {
+  --ss-accent: #3b63e0;
+  --ss-accent-soft: #eaefff;
+  --ss-accent-text: #2c4fc0;
+  --ss-text-strong: #1c1d22;
+  --ss-text: #6b6e7b;
+  --ss-text-faint: #9a9caa;
+  --ss-line: #e8e9ee;
+  --ss-radius-md: 8px;
+  --ss-radius-lg: 10px;
+  --sh-editor: #0f172a;
+  --sh-outline: #4f7cff;
+}

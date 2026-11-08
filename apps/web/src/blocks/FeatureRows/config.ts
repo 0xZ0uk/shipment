@@ -1,7 +1,7 @@
 import { linkGroup } from '@/fields/linkGroup'
 
 import { defineBlock } from '../shared/defineBlock'
-import { blockRichText, headingFields, mediaField } from '../shared/fields'
+import { blockRichText, headingFields, illustrationField, mediaField } from '../shared/fields'
 
 import { featureRowsMeta } from './meta'
 import { featureRowsThumbnail } from './thumbnail'
@@ -34,6 +34,7 @@ export const FeatureRowsConfig = defineBlock({
         },
         linkGroup({ appearances: ['default', 'outline'], overrides: { maxRows: 2 } }),
         mediaField(),
+        illustrationField({ slots: ['card'] }),
       ],
       maxRows: 8,
     },

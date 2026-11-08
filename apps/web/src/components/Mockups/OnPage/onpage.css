@@ -1,0 +1,149 @@
+.op .ss-stage {
+  overflow: hidden;
+  background: var(--sh-well);
+}
+
+/* Pinned, bottom bleed: one 28px gutter on three sides, the page running off the foot. */
+.op .op-window {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  top: 28px;
+  height: 400px;
+  box-shadow: var(--ss-shadow-hero);
+}
+.op .ss-stage[data-layout='compact'] .op-window {
+  left: 16px;
+  right: 16px;
+  top: 16px;
+}
+.op .op-body {
+  position: relative;
+  background: var(--ss-surface);
+}
+
+.op .op-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 28px;
+  text-align: center;
+}
+.op .ss-stage[data-layout='compact'] .op-page {
+  padding-top: 20px;
+}
+.op .op-eyebrow {
+  margin-bottom: 12px;
+}
+.op .ss-stage[data-layout='compact'] .op-eyebrow {
+  margin-bottom: 10px;
+}
+
+/* The heading, at the site's display size, wrapped to two lines before "this week". */
+.op .op-heading {
+  position: relative;
+  width: 300px;
+  color: var(--ss-text-strong);
+  font-size: 32px;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+.op .ss-stage[data-layout='compact'] .op-heading {
+  width: 240px;
+  font-size: 26px;
+}
+/* The editor's outline: dashed on hover, solid while editing, inset off the words. */
+.op .op-heading::after {
+  content: '';
+  position: absolute;
+  inset: -6px -10px;
+  border: 1.5px dashed var(--sh-outline);
+  border-radius: 6px;
+  opacity: 0;
+  transition:
+    opacity 150ms ease,
+    border-color 150ms ease;
+  pointer-events: none;
+}
+.op .op-heading[data-hover]::after {
+  opacity: 1;
+}
+.op .op-heading[data-editing]::after {
+  border-style: solid;
+  opacity: 1;
+}
+
+.op .op-sel[data-on] {
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--ss-accent) 24%, transparent);
+}
+.op .op-caret {
+  display: inline-block;
+  width: 2px;
+  height: 0.9em;
+  margin-left: 1px;
+  vertical-align: -0.08em;
+  background: var(--ss-accent);
+}
+
+.op .op-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+.op .op-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+.op .ss-stage[data-layout='compact'] .op-buttons {
+  margin-top: 14px;
+}
+.op .op-outline {
+  box-shadow: inset 0 0 0 1px var(--ss-line);
+  background: var(--ss-surface);
+}
+
+/* The on-page editor's toolbar: dark, floating at the foot of the viewport. */
+.op .op-toolbar {
+  position: absolute;
+  left: 50%;
+  top: 226px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 6px 0 14px;
+  border-radius: 10px;
+  background: var(--sh-editor);
+  color: #fff;
+  box-shadow: 0 8px 24px -8px rgb(15 23 42 / 0.45);
+  transform: translateX(-50%);
+  will-change: transform;
+  white-space: nowrap;
+}
+.op .ss-stage[data-layout='compact'] .op-toolbar {
+  top: 150px;
+}
+.op .op-status {
+  color: rgb(255 255 255 / 0.78);
+  font-size: 12px;
+}
+.op .op-divider {
+  flex: none;
+  width: 1px;
+  height: 16px;
+  background: rgb(255 255 255 / 0.16);
+}
+.op .op-tool {
+  display: flex;
+  color: #9ba3b4;
+}
+.op .op-publish {
+  --ss-accent: #3b63e0;
+  border-radius: 6px;
+}

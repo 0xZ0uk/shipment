@@ -317,6 +317,10 @@ export interface HeroBlock {
    * Shown below the text (Centered), beside it (Split) or behind it (Background image).
    */
   media?: (number | null) | Media;
+  /**
+   * A product mockup drawn in code, shown instead of the image (Centered and Split only). Wide mockups suit Centered.
+   */
+  illustration?: ('pageBuilder' | 'blockLibrary' | 'onPage' | 'seoAb') | null;
   section: {
     background: 'default' | 'muted' | 'dark';
     spacing: 'none' | 'sm' | 'md' | 'lg';
@@ -711,6 +715,10 @@ export interface FeatureRowsBlock {
             }[]
           | null;
         media?: (number | null) | Media;
+        /**
+         * A product mockup drawn in code, shown instead of the image or video.
+         */
+        illustration?: ('blockLibrary' | 'onPage' | 'seoAb') | null;
         id?: string | null;
       }[]
     | null;
