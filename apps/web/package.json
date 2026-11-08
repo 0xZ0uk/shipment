@@ -37,6 +37,7 @@
     "preview": "pnpm run build && cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" CLOUDFLARE_RUNTIME=true vite preview",
     "test": "pnpm run test:int && pnpm run test:e2e",
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" playwright test --config=playwright.config.ts",
+    "test:e2e:locales": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" playwright test --config=playwright.locales.config.ts",
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
     "typecheck": "tsc --noEmit"
   },

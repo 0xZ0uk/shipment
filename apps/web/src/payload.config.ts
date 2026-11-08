@@ -35,6 +35,7 @@ import { Footer } from './Footer/config'
 import { Header } from './Header/config'
 import { seedBlogEndpoint, seedHomeEndpoint } from './endpoints/seed'
 import { defaultLexical } from './fields/defaultLexical'
+import { defaultLocale, languageTag, localeLabel, locales, localizePath } from './i18n/locales'
 import type { Page, Post } from './payload-types'
 import { abMeasurementConfig } from './plugins/abMeasurement'
 import { abStorage, isAbVariant } from './plugins/abTesting'
@@ -121,10 +122,13 @@ export default buildConfig({
     deleteJobOnComplete: true,
   },
   logger: isWorkersRuntime ? cloudflareLogger : undefined,
+  // `LOCALES` (src/i18n/locales.ts), `en` by default. Titles, page and section layouts, post
+  // bodies, SEO meta, header/footer labels and the cookie banner's copy are `localized`; slugs and
+  // media aren't. A field with no value in a locale shows the default locale's (`fallback`).
   localization: {
-    locales: [{ code: 'en', label: 'English' }],
+    locales: locales.map((code) => ({ code, label: localeLabel(code) })),
     fallback: true,
-    defaultLocale: 'en',
+    defaultLocale,
   },
   // D1 only stores file metadata. Uploads go to R2 on Workers; the Node dev server writes
   // them to the local `media/` directory instead.
@@ -244,6 +248,9 @@ export default buildConfig({
       // is what a visitor bucketed into it gets at the original's URL.
       excludeDocs: isAbVariant,
       excludeDocsFields: ['_abVariantOf'],
+      // With a second locale, sitemap.xml lists each page and post once per locale it is
+      // published in, with hreflang alternates. llms.txt stays the default locale's.
+      localization: { defaultLocale, hreflang: languageTag, locales, localizePath },
       siteName,
       siteUrl: process.env.SITE_URL || cloudflare.SITE_URL || undefined,
       uploadsCollection: 'media',
@@ -309,13 +316,16 @@ export default buildConfig({
     onpage({
       collections: {
         pages: {
-          url: ({ doc }) => (typeof doc.slug === 'string' ? pagePath(doc.slug) : null),
+          // In the locale the editor is in (`/pt/about`), so the page loads and saves it.
+          url: ({ doc, locale }) =>
+            typeof doc.slug === 'string' ? localizePath(pagePath(doc.slug), locale) : null,
           // A/B variants are edited in the Variants panel's drawer, and visitors reach them
           // through the original's URL, so they get no "Edit on page".
           hideEditWhen: '_abVariantOf',
         },
         posts: {
-          url: ({ doc }) => (typeof doc.slug === 'string' ? postPath(doc.slug) : null),
+          url: ({ doc, locale }) =>
+            typeof doc.slug === 'string' ? localizePath(postPath(doc.slug), locale) : null,
         },
       },
       session: tanstackSession({ secret }),

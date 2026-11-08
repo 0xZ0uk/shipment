@@ -2,6 +2,14 @@ import { serializeJsonLd } from '@shipment/payload-seo-analyzer/shared'
 
 import type { Author, Media, Post } from '@/payload-types'
 
+import {
+  defaultLocale,
+  isMultilingual,
+  languageTag,
+  type Locale,
+  localizePath,
+} from '@/i18n/locales'
+
 import { BLOG_PATH, postPath } from './postPath'
 import { siteName } from './siteName'
 
@@ -40,10 +48,15 @@ const imageUrl = (origin: string, image: Media | number | null | undefined) =>
  * - `BreadcrumbList`: Home › Blog › the post.
  *
  * @param siteUrl - absolute origin; a trailing slash is ignored
+ * @param locale - the locale whose URLs describe it; with several locales, its `inLanguage`
  */
-export const buildPostJsonLd = (post: PostForJsonLd, siteUrl: string): string[] => {
+export const buildPostJsonLd = (
+  post: PostForJsonLd,
+  siteUrl: string,
+  locale: Locale = defaultLocale,
+): string[] => {
   const origin = siteUrl.replace(/\/+$/, '')
-  const url = `${origin}${postPath(post.slug ?? '')}`
+  const url = `${origin}${localizePath(postPath(post.slug ?? ''), locale)}`
   const published = post.publishedAt || post.createdAt || undefined
   const authors = (post.authors ?? [])
     .filter((author): author is Pick<Author, 'name'> => typeof author === 'object' && !!author?.name)
@@ -58,6 +71,7 @@ export const buildPostJsonLd = (post: PostForJsonLd, siteUrl: string): string[] 
     description: post.meta?.description || post.excerpt || undefined,
     headline: post.title,
     image: imageUrl(origin, post.meta?.image) ?? imageUrl(origin, post.cover),
+    inLanguage: isMultilingual ? languageTag(locale) : undefined,
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     publisher: { '@type': 'Organization', name: siteName, url: origin },
     url,
@@ -67,8 +81,18 @@ export const buildPostJsonLd = (post: PostForJsonLd, siteUrl: string): string[] 
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     itemListElement: [
-      { '@type': 'ListItem', item: `${origin}/`, name: 'Home', position: 1 },
-      { '@type': 'ListItem', item: `${origin}${BLOG_PATH}`, name: 'Blog', position: 2 },
+      {
+        '@type': 'ListItem',
+        item: `${origin}${localizePath('/', locale)}`,
+        name: 'Home',
+        position: 1,
+      },
+      {
+        '@type': 'ListItem',
+        item: `${origin}${localizePath(BLOG_PATH, locale)}`,
+        name: 'Blog',
+        position: 2,
+      },
       { '@type': 'ListItem', item: url, name: post.title, position: 3 },
     ],
   }

@@ -49,6 +49,8 @@ export function clientSeoConfig(config: SeoConfig | undefined): SeoConfig {
   const out: Record<string, unknown> = {}
   for (const [key, value] of Object.entries(config ?? {})) {
     if (value === undefined || typeof value === 'function' || value instanceof RegExp) continue
+    // Server only (sitemap.xml), and it holds a function (`localizePath`).
+    if (key === 'localization') continue
     out[key] = value
   }
   return out as SeoConfig

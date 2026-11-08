@@ -25,6 +25,7 @@ export type {
   SeoThresholds,
   SeoFeatures,
   SeoExcludeDocs,
+  SeoLocalization,
 } from './types'
 
 // Re-export helpers for external consumers

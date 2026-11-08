@@ -11,7 +11,7 @@ import {
 export type SearchEntry = {
   collection: string
   id: number | string
-  /** `''` while the site has one locale (see `schema.ts`). */
+  /** `''` for the default locale, else the locale's code (`indexLocale`, see `schema.ts`). */
   locale?: string
   path: string
   title: string
@@ -24,8 +24,8 @@ export type SearchOptions = { limit?: number; locale?: string }
 export interface SearchIndex {
   /** Replaces the document's row (or adds it). */
   upsert(entry: SearchEntry): Promise<void>
-  /** Removes the document's rows, in every locale. */
-  remove(collection: string, id: number | string): Promise<void>
+  /** Removes the document's rows: in every locale, or in `locale` only (an `indexLocale`). */
+  remove(collection: string, id: number | string, locale?: string): Promise<void>
   /** The ids of a collection's indexed documents (the backfill drops those no longer listed). */
   ids(collection: string): Promise<string[]>
   /** Best matches first; `[]` for a query with nothing searchable in it. */
@@ -52,6 +52,13 @@ export function snippetParts(snippet: string): SnippetPart[] {
   }
   return parts
 }
+
+/**
+ * A locale's value in the `locale` column: `''` for the default locale, so rows written while the
+ * site had one locale stay valid when a second is added (no reindex); the code for any other.
+ */
+export const indexLocale = (locale: string, defaultLocale: string): string =>
+  locale === defaultLocale ? '' : locale
 
 const clampLimit = (limit: number | undefined) =>
   Math.min(
@@ -96,12 +103,19 @@ export function createSearchIndex(db: D1Database): SearchIndex {
       ])
     },
 
-    async remove(collection, id) {
+    async remove(collection, id, locale) {
       await migrated()
-      await db
-        .prepare('DELETE FROM search_index WHERE collection = ? AND doc_id = ?')
-        .bind(collection, String(id))
-        .run()
+      await (
+        locale === undefined
+          ? db
+              .prepare('DELETE FROM search_index WHERE collection = ? AND doc_id = ?')
+              .bind(collection, String(id))
+          : db
+              .prepare(
+                'DELETE FROM search_index WHERE collection = ? AND doc_id = ? AND locale = ?',
+              )
+              .bind(collection, String(id), locale)
+      ).run()
     },
 
     async ids(collection) {

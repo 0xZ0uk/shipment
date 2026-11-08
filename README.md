@@ -49,7 +49,7 @@ Turbo caches `build`, `typecheck` and `lint`; anything that depends on a plugin 
 
 - **CI** (`.github/workflows/ci.yml`) runs on every PR and push to `master`.
   - The checks job runs lint, typecheck, the plugins' and onpage's unit tests, the app's integration tests and the production build. It also fails when the Payload schema changed without a migration, or when the import map or generated types are stale.
-  - The e2e job migrates a fresh local D1 and runs the Playwright suite (frontend, admin and SEO views).
+  - The e2e job migrates a fresh local D1 and runs the Playwright suite (frontend, admin and SEO views), then the second-locale specs with `LOCALES=en,pt`.
   - It needs no secrets.
 - **Reviews:** [Pullfrog](https://docs.pullfrog.com) reviews PRs with DeepSeek V4.1 Flash on OpenCode Go (`.github/workflows/pullfrog.yml`). Its instructions and console setup are in [`.github/pullfrog/`](.github/pullfrog/README.md).
 - Workflow actions are pinned to commit SHAs, and Dependabot bumps them.

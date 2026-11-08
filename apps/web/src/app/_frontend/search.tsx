@@ -5,6 +5,8 @@ import React, { useId } from 'react'
 import { ResultExcerpt } from '@/components/SiteSearch/ResultText'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { localizePath, splitLocalePath } from '@/i18n/locales'
+import { useLocale } from '@/i18n/routing'
 import { MAX_QUERY_LENGTH } from '@/search/matchQuery'
 import { siteName } from '@/utilities/siteName'
 
@@ -23,8 +25,8 @@ const validateSearch = (search: Record<string, unknown>): { q?: string } => {
  */
 export const Route = createFileRoute('/_frontend/search')({
   validateSearch,
-  loaderDeps: ({ search }) => ({ q: search.q ?? '' }),
-  loader: ({ deps }) => searchSite({ data: { q: deps.q } }),
+  loaderDeps: ({ search }) => ({ locale: search.locale, q: search.q ?? '' }),
+  loader: ({ deps }) => searchSite({ data: { locale: deps.locale, q: deps.q } }),
   head: ({ loaderData }) => ({
     meta: [
       {
@@ -41,6 +43,7 @@ export const Route = createFileRoute('/_frontend/search')({
 function SearchPage() {
   const { query, results, status } = Route.useLoaderData()
   const navigate = useNavigate()
+  const locale = useLocale()
   const inputId = useId()
 
   return (
@@ -49,7 +52,7 @@ function SearchPage() {
 
       {/* A plain GET form without JavaScript; a client-side navigation with it. */}
       <form
-        action="/search"
+        action={localizePath('/search', locale)}
         className="mt-6 flex gap-2"
         method="get"
         onSubmit={(event) => {
@@ -95,10 +98,12 @@ function SearchPage() {
         <ol className="mt-4 divide-y divide-border">
           {results.map((result) => (
             <li className="py-5" key={`${result.collection}:${result.id}`}>
-              {/* An index path (`/pricing`), not a typed route. */}
+              {/* An index path (`/pricing`, `/pt/pricing`), not a typed route. The router adds the
+                  visitor's locale prefix back (the layout keeps `locale`), so it gets the
+                  unprefixed path. */}
               <Link
                 className="text-lg font-medium underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
-                to={result.path as '/'}
+                to={splitLocalePath(result.path).path as '/'}
               >
                 {result.title || result.path}
               </Link>

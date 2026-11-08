@@ -5,7 +5,8 @@ import { BLOG_FEED_PATH, BLOG_FEED_SIZE } from '@/utilities/postPath'
 import { siteName } from '@/utilities/siteName'
 
 /**
- * The blog's RSS 2.0 feed: the latest `BLOG_FEED_SIZE` published posts (`buildRssFeed`).
+ * The blog's RSS 2.0 feed: the latest `BLOG_FEED_SIZE` published posts (`buildRssFeed`), one
+ * per locale (`/pt/blog/rss.xml`), all tagged with the unprefixed path.
  *
  * It's the same for everyone (published posts, read without a user), so with `SITE_URL` set it
  * opts in to Workers Cache like a published page, tagged `posts` for the purge hooks. Without
@@ -22,10 +23,15 @@ export const Route = createFileRoute('/blog/rss.xml')({
         const { findPostSummaries } = await import('@/utilities/postQueries')
         const { buildRssFeed } = await import('@/utilities/rss')
 
+        const { splitLocalePath } = await import('@/i18n/locales')
+
         const configuredSiteUrl = process.env.SITE_URL || cloudflareEnv.SITE_URL
-        const { docs } = await findPostSummaries(payload, { limit: BLOG_FEED_SIZE })
+        // `/pt/blog/rss.xml` is the Portuguese feed (the router routes it here unprefixed).
+        const { locale } = splitLocalePath(new URL(request.url).pathname)
+        const { docs } = await findPostSummaries(payload, { limit: BLOG_FEED_SIZE, locale })
         const xml = buildRssFeed({
           description: `The latest posts from ${siteName}.`,
+          locale,
           posts: docs,
           siteUrl: configuredSiteUrl || new URL(request.url).origin,
           title: `${siteName} blog`,
