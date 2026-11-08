@@ -1,5 +1,6 @@
 import { createCsrfMiddleware, createMiddleware, createStart } from '@tanstack/react-start'
 
+import { withOnPageNoStore } from '@/utilities/onpageNoStore'
 import { trailingSlashTarget } from '@/utilities/trailingSlash'
 
 /**
@@ -15,11 +16,18 @@ const trailingSlashMiddleware = createMiddleware({ type: 'request' }).server(({ 
   return new Response(null, { headers: { Location: target }, status: 308 })
 })
 
+/** No shared cache may store a response to a marked (`?_onpage=1`) URL; see withOnPageNoStore. */
+const onpageNoStoreMiddleware = createMiddleware({ type: 'request' }).server(async ({ next, request }) => {
+  const result = await next()
+  return { ...result, response: withOnPageNoStore(request, result.response) }
+})
+
 export const startInstance = createStart(() => ({
   requestMiddleware: [
     // Defining a start instance replaces TanStack's default request middleware, which is
     // exactly this CSRF check on server-function calls. Keep it.
     createCsrfMiddleware({ filter: (ctx) => ctx.handlerType === 'serverFn' }),
     trailingSlashMiddleware,
+    onpageNoStoreMiddleware,
   ],
 }))
