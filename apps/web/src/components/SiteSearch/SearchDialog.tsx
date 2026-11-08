@@ -10,6 +10,8 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command'
+import { defaultLocale } from '@/i18n/locales'
+import { useLocale } from '@/i18n/routing'
 import { MAX_QUERY_LENGTH } from '@/search/matchQuery'
 import { MIN_QUERY_LENGTH, type SearchResponse, type SearchResult } from '@/search/types'
 
@@ -53,6 +55,9 @@ export default function SearchDialog({
   open: boolean
 }) {
   const navigate = useNavigate()
+  // Results in the visitor's locale (pages published in it), at its URLs.
+  const locale = useLocale()
+  const localeParam = locale === defaultLocale ? '' : `&locale=${encodeURIComponent(locale)}`
   const [query, setQuery] = useState('')
   const [state, setState] = useState<SearchState>(idle)
   // The highlighted item, controlled: when new results arrive the best match is highlighted
@@ -70,7 +75,7 @@ export default function SearchDialog({
       // Keep the previous results on screen until the new ones arrive.
       setState((previous) => ({ ...previous, status: 'loading' }))
       try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`, {
+        const response = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}${localeParam}`, {
           headers: { accept: 'application/json' },
           signal: controller.signal,
         })
@@ -88,7 +93,7 @@ export default function SearchDialog({
       clearTimeout(timer)
       controller.abort()
     }
-  }, [trimmed])
+  }, [trimmed, localeParam])
 
   const openResult = (path: string) => {
     onOpenChange(false)

@@ -3,15 +3,20 @@ import { createServerFn } from '@tanstack/react-start'
 
 import type { RedirectIndex, ResolvedRedirect } from '@/utilities/redirects'
 
-import { buildRedirectIndex, matchRedirect } from '@/utilities/redirects'
+import { localizePath } from '@/i18n/locales'
+import { publicSearchStr } from '@/i18n/routing'
+import { requestLocale } from '@/i18n/server'
+import { buildRedirectIndex, matchLocalizedRedirect } from '@/utilities/redirects'
 import { r2SeoCacheStore } from '@/plugins/seoCacheStore'
 import { FRONTEND_REDIRECTS_CACHE_BASE } from '@shipment/payload-seo-analyzer/shared'
 
 import { createRedirectIndexCache } from './redirectIndexCache'
 
 type ResolveRedirectInput = {
-  /** The request's URL pathname. */
+  /** The request's URL pathname, without its locale prefix (the route's location). */
   pathname: string
+  /** The route's locale (`/pt/old` arrives as `/old` in `pt`); the default when absent. */
+  locale?: string
   /** The request's raw query string, carried over to the target. */
   search?: string
 }
@@ -112,9 +117,12 @@ const recordNotFound = async (pathname: string) => {
 export const resolveRedirect = createServerFn({ method: 'GET' })
   .validator((data: ResolveRedirectInput): ResolveRedirectInput => data)
   .handler(async ({ data }): Promise<ResolvedRedirect | null> => {
-    const target = matchRedirect(await getIndex(), data.pathname, data.search)
+    const locale = requestLocale(data.locale)
+    const index = await getIndex()
+    const target = matchLocalizedRedirect(index, data.pathname, data.search ?? '', locale)
 
-    if (!target) await recordNotFound(data.pathname)
+    // The 404 log keeps the URL the visitor asked for, prefix included.
+    if (!target) await recordNotFound(localizePath(data.pathname, locale))
 
     return target
   })
@@ -123,12 +131,12 @@ export const resolveRedirect = createServerFn({ method: 'GET' })
  * A route loader's miss (no such post, category or archive page): the SEO redirect for this URL
  * if there is one, else a 404. Only misses pay for the lookup.
  */
-export const redirectOrNotFound = async (location: {
-  pathname: string
-  searchStr: string
-}): Promise<never> => {
+export const redirectOrNotFound = async (
+  location: { pathname: string; searchStr: string },
+  locale?: string,
+): Promise<never> => {
   const target = await resolveRedirect({
-    data: { pathname: location.pathname, search: location.searchStr },
+    data: { locale, pathname: location.pathname, search: publicSearchStr(location.searchStr) },
   })
   if (target) throw redirect({ href: target.href, statusCode: target.statusCode })
   throw notFound()

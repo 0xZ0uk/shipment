@@ -3,6 +3,7 @@ import type { RequiredDataFromCollectionSlug } from 'payload'
 import { createServerFn } from '@tanstack/react-start'
 
 import type { PostSummary } from '@/components/Posts/types'
+import { defaultLocale, type Locale } from '@/i18n/locales'
 import type { Category } from '@/payload-types'
 import {
   archivePageTags,
@@ -57,10 +58,22 @@ const getPayloadInstance = async () => {
 
 type LoadPostInput = {
   draft?: boolean
+  /** The visitor's locale (the route's `locale` search param); the default when absent. */
+  locale?: string
   slug: string
 }
 
-export type LoadPostResult = {
+/** The locale fields every blog loader returns (see `LoadPageResult`). */
+export type LocaleResult = {
+  /** The locale the URL asked for. */
+  locale: Locale
+  /** The locales the document is translated into; every locale for an archive. */
+  translations: Locale[]
+  /** No translation in `locale`: the default locale's content, canonical there, `noindex`. */
+  fallback: boolean
+}
+
+export type LoadPostResult = LocaleResult & {
   /** True when the draft is shown (live preview, on-page editing or a preview link). */
   draft: boolean
   /** The admin's live preview (`?draft=true` from a signed-in user). */
@@ -89,7 +102,12 @@ export const loadPost = createServerFn({ method: 'GET', strict: { output: false 
     const payload = await getPayloadInstance()
     const { isDraftEnabled, onpageContext, previewGrantFor } =
       await import('@shipment/onpage-tanstack-start/session')
+    const { isFallback, readLocale, requestLocale, translatedLocales } = await import(
+      '@/i18n/server'
+    )
+    const locale = requestLocale(data.locale)
 
+    // The cache tag and the preview grant's path: the post's unprefixed path in every locale.
     const path = postPath(data.slug)
     const onpageDraft = await isDraftEnabled()
     const user =
@@ -102,27 +120,37 @@ export const loadPost = createServerFn({ method: 'GET', strict: { output: false 
     const draft = Boolean(user) || Boolean(shared)
 
     const markers = await onpageContext()
-    const result = await payload.find({
-      collection: 'posts',
-      // Cover, meta image, categories, and authors with their avatars (and bios: not in
-      // `Authors.defaultPopulate`, which the archives use).
-      depth: 2,
-      populate: { authors: { avatar: true, bio: true, name: true, slug: true } },
-      draft,
-      limit: 1,
-      overrideAccess: Boolean(shared),
-      pagination: false,
-      user,
-      where: shared ? { id: { equals: shared.id } } : { slug: { equals: data.slug } },
-      ...markers,
-    })
+    const queryPost = (inLocale: Locale) =>
+      payload.find({
+        collection: 'posts',
+        // Cover, meta image, categories, and authors with their avatars (and bios: not in
+        // `Authors.defaultPopulate`, which the archives use).
+        depth: 2,
+        populate: { authors: { avatar: true, bio: true, name: true, slug: true } },
+        draft,
+        limit: 1,
+        overrideAccess: Boolean(shared),
+        pagination: false,
+        user,
+        where: shared ? { id: { equals: shared.id } } : { slug: { equals: data.slug } },
+        ...readLocale(inLocale),
+        ...markers,
+      })
+    // Published in the visitor's locale, else the default locale's (a fallback view, see
+    // `loadPage`).
+    let result = await queryPost(locale)
+    if (result.docs.length === 0 && !draft && locale !== defaultLocale) {
+      result = await queryPost(defaultLocale)
+    }
     const post = result.docs[0] ?? null
     const site = await siteContext(draft)
+    const translations = post ? await translatedLocales(payload, 'posts', post.id) : [defaultLocale]
+    const fallback = post != null && isFallback(locale, translations)
 
     let jsonLd: string[] = []
     if (post) {
       const { buildPostJsonLd } = await import('@/utilities/postJsonLd')
-      jsonLd = buildPostJsonLd(post, site.siteUrl)
+      jsonLd = buildPostJsonLd(post, site.siteUrl, fallback ? defaultLocale : locale)
     }
 
     const publicView = isPublicPageView({
@@ -142,22 +170,27 @@ export const loadPost = createServerFn({ method: 'GET', strict: { output: false 
 
     return {
       draft,
+      fallback,
       gaMeasurementId: post ? site.gaMeasurementId : null,
       jsonLd,
       livePreview: Boolean(user) && Boolean(data.draft),
+      locale,
       post,
       siteUrl: site.siteUrl,
+      translations: post ? translations : [],
     }
   })
 
 type LoadArchiveInput = {
   /** 1-based; the route has already turned `/page/1` into a redirect. */
   page: number
+  /** The visitor's locale; the default when absent. */
+  locale?: string
   /** A category's archive, by slug; the whole blog without. */
   category?: string
 }
 
-export type LoadArchiveResult = {
+export type LoadArchiveResult = LocaleResult & {
   /** False for an unknown category or a page past the last: the route answers 404. */
   found: boolean
   category: Pick<Category, 'description' | 'id' | 'slug' | 'title'> | null
@@ -187,6 +220,11 @@ export const loadPostArchive = createServerFn({ method: 'GET', strict: { output:
     const { isDraftEnabled } = await import('@shipment/onpage-tanstack-start/session')
     const onpageDraft = await isDraftEnabled()
     const site = await siteContext(onpageDraft)
+    const { requestLocale } = await import('@/i18n/server')
+    const { locales } = await import('@/i18n/locales')
+    const locale = requestLocale(data.locale)
+    // A listing exists in every locale (its posts fall back one by one), so it's never a fallback.
+    const localeResult: LocaleResult = { fallback: false, locale, translations: [...locales] }
 
     let category: LoadArchiveResult['category'] = null
     if (data.category !== undefined) {
@@ -204,6 +242,7 @@ export const loadPostArchive = createServerFn({ method: 'GET', strict: { output:
     const basePath = data.category !== undefined ? categoryPath(data.category) : BLOG_PATH
 
     const missing = (): LoadArchiveResult => ({
+      ...localeResult,
       basePath,
       category,
       found: false,
@@ -219,6 +258,7 @@ export const loadPostArchive = createServerFn({ method: 'GET', strict: { output:
     const result = await findPostSummaries(payload, {
       categoryId: category?.id,
       limit: BLOG_PAGE_SIZE,
+      locale,
       page: data.page,
     })
     const totalPages = archivePageCount(result.totalDocs)
@@ -243,6 +283,7 @@ export const loadPostArchive = createServerFn({ method: 'GET', strict: { output:
     }
 
     return {
+      ...localeResult,
       basePath,
       category,
       found: true,

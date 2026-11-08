@@ -5,6 +5,8 @@ import React, { useId } from 'react'
 import { ResultExcerpt } from '@/components/SiteSearch/ResultText'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { localizePath } from '@/i18n/locales'
+import { localeOf, useLocale } from '@/i18n/routing'
 import { MAX_QUERY_LENGTH } from '@/search/matchQuery'
 import { siteName } from '@/utilities/siteName'
 
@@ -23,8 +25,8 @@ const validateSearch = (search: Record<string, unknown>): { q?: string } => {
  */
 export const Route = createFileRoute('/_frontend/search')({
   validateSearch,
-  loaderDeps: ({ search }) => ({ q: search.q ?? '' }),
-  loader: ({ deps }) => searchSite({ data: { q: deps.q } }),
+  loaderDeps: ({ search }) => ({ locale: localeOf(search), q: search.q ?? '' }),
+  loader: ({ deps }) => searchSite({ data: { locale: deps.locale, q: deps.q } }),
   head: ({ loaderData }) => ({
     meta: [
       {
@@ -41,6 +43,7 @@ export const Route = createFileRoute('/_frontend/search')({
 function SearchPage() {
   const { query, results, status } = Route.useLoaderData()
   const navigate = useNavigate()
+  const locale = useLocale()
   const inputId = useId()
 
   return (
@@ -49,7 +52,7 @@ function SearchPage() {
 
       {/* A plain GET form without JavaScript; a client-side navigation with it. */}
       <form
-        action="/search"
+        action={localizePath('/search', locale)}
         className="mt-6 flex gap-2"
         method="get"
         onSubmit={(event) => {

@@ -14,9 +14,10 @@
  * "cafe" finds "Café" (`2` also handles the combining-mark forms `1` misses). No stemming
  * (`porter` is English only, and #158 adds a second locale), so prefix queries stand in for it.
  *
- * `locale` is the extension point for a second locale (#158): one row per document and
- * locale. With one locale it is always `''`. `collection`, `doc_id`, `locale` and `path` are
- * `UNINDEXED`: stored and filterable, never matched.
+ * `locale`: one row per document and locale (#158). The default locale's rows have `''` (so
+ * they were already right while the site had one locale), another locale's its code, and only
+ * while the document is published in it. Queries filter on the visitor's. `collection`,
+ * `doc_id`, `locale` and `path` are `UNINDEXED`: stored and filterable, never matched.
  */
 export interface SearchMigration {
   id: string

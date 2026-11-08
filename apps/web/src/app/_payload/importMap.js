@@ -31,7 +31,6 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { LLMInstructionsCell as LLMInstructionsCell_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 import { RowLabel as RowLabel_ec255a65fa6fa8d1faeb09cf35284224 } from '@/Header/RowLabel'
 import { RowLabel as RowLabel_1f6ff6ff633e3695d348f4f3c58f1466 } from '@/Footer/RowLabel'
-import { RowLabel as RowLabel_881d177759bf43ec466dd71c19bfba23 } from '@/blocks/shared/RowLabel'
 import { AssistantNavLink as AssistantNavLink_f8988aa121d95a35ca8909d17453c53e } from '@shipment/payload-plugin-assistant/admin/AssistantNavLink'
 import { SeoNavLink as SeoNavLink_3d7aee1cd51fbf4662c25c06ed93689b } from '@shipment/payload-seo-analyzer/client'
 import { SocialsDashboardWidget as SocialsDashboardWidget_6f75135b89b4101eea84a09400aa6a84 } from '@shipment/payload-plugin-socials/client'
@@ -93,7 +92,6 @@ export const importMap = {
   "@payloadcms/ui/rsc#LLMInstructionsCell": LLMInstructionsCell_ab83ff7e88da8d3530831f296ec4756a,
   "@/Header/RowLabel#RowLabel": RowLabel_ec255a65fa6fa8d1faeb09cf35284224,
   "@/Footer/RowLabel#RowLabel": RowLabel_1f6ff6ff633e3695d348f4f3c58f1466,
-  "@/blocks/shared/RowLabel#RowLabel": RowLabel_881d177759bf43ec466dd71c19bfba23,
   "@shipment/payload-plugin-assistant/admin/AssistantNavLink#AssistantNavLink": AssistantNavLink_f8988aa121d95a35ca8909d17453c53e,
   "@shipment/payload-seo-analyzer/client#SeoNavLink": SeoNavLink_3d7aee1cd51fbf4662c25c06ed93689b,
   "@shipment/payload-plugin-socials/client#SocialsDashboardWidget": SocialsDashboardWidget_6f75135b89b4101eea84a09400aa6a84,

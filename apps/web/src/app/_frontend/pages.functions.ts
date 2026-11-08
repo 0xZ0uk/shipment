@@ -7,11 +7,14 @@ import type { LayoutBlock } from '@/blocks/components'
 import { collectArchiveBlocks } from '@/components/Posts/archiveBlocks'
 import type { PostSummary } from '@/components/Posts/types'
 import { isPublicPageView, POSTS_TAG, publicPageHeaders } from '@/utilities/cacheControl'
+import { defaultLocale, type Locale, localizePath } from '@/i18n/locales'
 import { gaMeasurementIdFor } from '@/utilities/googleAnalytics'
 import { pagePath } from '@/utilities/pagePath'
 
 type LoadPageInput = {
   draft?: boolean
+  /** The visitor's locale (the route's `locale` search param); the default when absent. */
+  locale?: string
   slug: string
 }
 
@@ -38,6 +41,18 @@ export type LoadPageResult = {
   redirectTo?: string
   /** The public origin (`SITE_URL`, else the request origin) for canonical URLs. */
   siteUrl: string
+  /** The locale the page was asked for in (its URL's), whatever its content fell back to. */
+  locale: Locale
+  /**
+   * The locales the page is translated into (`translatedLocales`): its hreflang alternates and
+   * the switcher's targets. The default locale only, with one locale.
+   */
+  translations: Locale[]
+  /**
+   * True when the page has no translation in `locale` and shows the default locale's content:
+   * its canonical is then the default-locale URL, it's `noindex`, and it has no hreflang.
+   */
+  fallback: boolean
   /**
    * The A/B experiment this view is part of (its manifest key, the page's path), or null. The
    * page then reports CTA clicks as conversions; the bucket stays in the visitor's cookies.
@@ -63,6 +78,10 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
   .validator((data: LoadPageInput): LoadPageInput => data)
   .handler(async ({ data }): Promise<LoadPageResult> => {
     const { getPayload } = await import('payload')
+    const { isFallback, readLocale, requestLocale, translatedLocales } = await import(
+      '@/i18n/server'
+    )
+    const locale = requestLocale(data.locale)
     const {
       appendResponseHeader,
       getRequestHeader,
@@ -122,7 +141,7 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
 
     // In edit mode, strings come back with invisible markers that map them to their fields.
     const markers = await onpageContext()
-    const findPage = (where: Where) =>
+    const queryPage = (where: Where, inLocale: Locale) =>
       payload.find({
         collection: 'pages',
         depth: 2,
@@ -132,8 +151,17 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
         pagination: false,
         user,
         where,
+        ...readLocale(inLocale),
         ...markers,
       })
+    // A visitor's query finds only pages published in their locale (Payload keeps `_status` per
+    // locale). An untranslated page is shown in the default locale's words instead of a 404, as a
+    // fallback view (`fallback` below). Drafts are found in any locale, with field fallbacks.
+    const findPage = async (where: Where) => {
+      const found = await queryPage(where, locale)
+      if (found.docs.length > 0 || draft || locale === defaultLocale) return found
+      return queryPage(where, defaultLocale)
+    }
 
     let result = await findPage(
       shared ? { id: { equals: shared.id } } : { slug: { equals: variantSlug ?? data.slug } },
@@ -171,12 +199,15 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
           return {
             canonicalSlug: original,
             draft,
+            fallback: false,
             jsonLd: [],
             livePreview: false,
+            locale,
             origin,
             page: null,
-            redirectTo: pagePath(original),
+            redirectTo: localizePath(pagePath(original), locale),
             siteUrl,
+            translations: [],
           }
         }
         canonicalSlug = original
@@ -191,10 +222,20 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
     let jsonLd: string[] = []
     const postsArchive: Record<string, PostSummary[]> = {}
     let showsPosts = false
+    // The static home page placeholder has no document, and only the default locale's text.
+    const translations =
+      page && 'id' in page && page.id != null
+        ? await translatedLocales(payload, 'pages', page.id)
+        : [defaultLocale]
+    const fallback = isFallback(locale, translations)
 
     if (page) {
       const { buildPageJsonLd } = await import('@/utilities/pageJsonLd')
-      jsonLd = await buildPageJsonLd(page, siteUrl, { slug: canonicalSlug })
+      // A fallback view describes the default-locale page, its canonical.
+      jsonLd = await buildPageJsonLd(page, siteUrl, {
+        locale: fallback ? defaultLocale : locale,
+        slug: canonicalSlug,
+      })
 
       const archiveBlocks = collectArchiveBlocks(page.layout as LayoutBlock[] | null | undefined)
       if (archiveBlocks.length > 0) {
@@ -202,7 +243,9 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
         const { findPostSummaries } = await import('@/utilities/postQueries')
         await Promise.all(
           archiveBlocks.map(async ({ categoryId, id, limit }) => {
-            postsArchive[id] = (await findPostSummaries(payload, { categoryId, limit })).docs
+            postsArchive[id] = (
+              await findPostSummaries(payload, { categoryId, limit, locale })
+            ).docs
           }),
         )
       }
@@ -228,6 +271,8 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
       user: user != null,
     })
     if (publicView) {
+      // Tagged with the unprefixed path in every locale (`page:/about` on `/pt/about` too): saving
+      // any locale changes the others' hreflang, so one purge covers them all.
       // A page listing posts (a Posts archive block) is purged when a post is published too.
       const tags = showsPosts ? [POSTS_TAG] : []
       for (const [name, value] of Object.entries(publicPageHeaders(pagePath(data.slug), tags))) {
@@ -239,13 +284,16 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
       canonicalSlug,
       draft,
       experiment: page ? experiment : null,
+      fallback: page != null && fallback,
       gaMeasurementId: page ? gaMeasurementId : null,
       jsonLd,
       livePreview: Boolean(user) && Boolean(data.draft),
+      locale,
       origin,
       page,
       postsArchive,
       siteUrl,
+      translations: page ? translations : [],
     }
   })
 

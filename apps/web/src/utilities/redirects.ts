@@ -8,6 +8,14 @@
  */
 import { normalizeFromPath, validateRedirectTarget } from '@shipment/payload-seo-analyzer/shared'
 
+import {
+  type Locale,
+  type LocaleConfig,
+  localeConfig,
+  localizePath,
+  splitLocalePath,
+} from '@/i18n/locales'
+
 export type RedirectStatus = 301 | 302
 
 export type RedirectRecord = {
@@ -123,4 +131,37 @@ export const matchRedirect = (
   }
 
   return { href: withSearch(entry.to, search), statusCode: entry.status }
+}
+
+/**
+ * `matchRedirect` for a path in `locale` (#158). The default locale's paths are looked up as
+ * they are. A prefixed request (`/pt/old`, routed as `/old` in `pt`) first takes a redirect of its
+ * own (`from: /pt/old`), then the unprefixed path's, whose site-relative target gets the prefix:
+ * `/old → /new` sends `/pt/old` to `/pt/new`. Absolute targets and targets already in a locale
+ * are kept as they are.
+ *
+ * @param pathname - the request's unprefixed pathname (`/old` for `/pt/old`)
+ */
+export const matchLocalizedRedirect = (
+  index: RedirectIndex,
+  pathname: string,
+  search: string,
+  locale: Locale,
+  config: LocaleConfig = localeConfig,
+): ResolvedRedirect | null => {
+  if (locale === config.defaultLocale) return matchRedirect(index, pathname, search)
+  const publicPath = localizePath(pathname, locale, config)
+  const own = matchRedirect(index, publicPath, search)
+  if (own) return own
+
+  const shared = matchRedirect(index, pathname, search)
+  if (!shared || !shared.href.startsWith('/') || shared.href.startsWith('//')) return shared
+  const targetPath = shared.href.split(/[?#]/)[0]
+  if (splitLocalePath(targetPath, config).locale !== config.defaultLocale) return shared
+
+  const href = localizePath(shared.href, locale, config)
+  // `/old → /` and the like stay loop-free in the locale too.
+  const targetKey = normalizeRedirectPath(href.split(/[?#]/)[0])
+  if (targetKey === normalizeRedirectPath(publicPath)) return null
+  return { ...shared, href }
 }

@@ -4,6 +4,8 @@ import { Link } from '@tanstack/react-router'
 import type { VariantProps } from 'class-variance-authority'
 import React from 'react'
 
+import { localizeHref } from '@/i18n/locales'
+import { useLocale } from '@/i18n/routing'
 import type { Page } from '@/payload-types'
 
 type ButtonVariants = VariantProps<typeof buttonVariants>
@@ -36,6 +38,9 @@ export const CMSLink: React.FC<CMSLinkType> = (props) => {
     url,
   } = props
 
+  // Internal pages keep the visitor's locale through the router (src/i18n/routing.ts); a custom
+  // URL on this site (`/pricing`, `/#faq`) gets the locale's prefix here.
+  const locale = useLocale()
   const slug =
     type === 'reference' && typeof reference?.value === 'object' ? reference.value.slug : null
 
@@ -79,7 +84,7 @@ export const CMSLink: React.FC<CMSLinkType> = (props) => {
   }
 
   return (
-    <a className={linkClassName} href={url!} {...newTabProps}>
+    <a className={linkClassName} href={localizeHref(url!, locale)} {...newTabProps}>
       {content}
     </a>
   )

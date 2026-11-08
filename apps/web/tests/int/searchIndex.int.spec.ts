@@ -9,6 +9,7 @@ import { toMatchQuery } from '@/search/matchQuery'
 import { migrateSearchIndex, SEARCH_MIGRATIONS } from '@/search/schema'
 import {
   createSearchIndex,
+  indexLocale,
   type SearchEntry,
   type SearchIndex,
   snippetParts,
@@ -106,6 +107,31 @@ describe('search index', () => {
     for (let id = 40; id < 70; id++) await index.remove('pages', id)
   })
 
+  it('keeps a row per locale, searched and removed per locale (#158)', async () => {
+    await index.upsert(entry(60, { title: 'Ferry boats', path: '/ferries' }))
+    await index.upsert(entry(60, { title: 'Barcos ferry', locale: 'pt', path: '/pt/ferries' }))
+    expect((await index.search('ferry')).map(({ path }) => path)).toEqual(['/ferries'])
+    expect((await index.search('ferry', { locale: 'pt' })).map(({ path }) => path)).toEqual([
+      '/pt/ferries',
+    ])
+    expect(await index.search('barcos')).toEqual([])
+    expect(await index.ids('pages')).toContain('60')
+
+    await index.remove('pages', 60, 'pt')
+    expect(await index.search('ferry', { locale: 'pt' })).toEqual([])
+    expect(await index.search('ferry')).toHaveLength(1)
+    await index.upsert(entry(60, { title: 'Barcos ferry', locale: 'pt', path: '/pt/ferries' }))
+    // Without a locale: every row of the document.
+    await index.remove('pages', 60)
+    expect(await index.search('ferry', { locale: 'pt' })).toEqual([])
+    expect(await index.search('ferry')).toEqual([])
+  })
+
+  it("stores the default locale as '' (rows from the single-locale site stay valid)", () => {
+    expect(indexLocale('en', 'en')).toBe('')
+    expect(indexLocale('pt', 'en')).toBe('pt')
+  })
+
   it('never throws on FTS5 syntax in the query', async () => {
     await index.upsert(entry(80, { title: 'Near the sea', body: 'Not a fan of ORs or ANDs.' }))
     const queries = [
@@ -194,6 +220,15 @@ describe('GET /api/search', () => {
       results: [{ id: '90', title: 'Ferry timetable' }],
     })
     await index.remove('pages', 90)
+  })
+
+  it("searches the default locale's rows for a locale the site doesn't have", async () => {
+    await index.upsert(entry(91, { title: 'Harbour map' }))
+    await index.upsert(entry(91, { title: 'Harbour map', locale: 'xx', path: '/xx/page-91' }))
+    const response = await endpointWith()!.handler(req('q=harbour&locale=xx'))
+    const body = (await response.json()) as { results: { path: string }[] }
+    expect(body.results.map(({ path }) => path)).toEqual(['/page-91'])
+    await index.remove('pages', 91)
   })
 
   it('answers 429 when the caller is over the limit', async () => {

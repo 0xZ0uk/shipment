@@ -1,5 +1,6 @@
 import type { PostSummary } from '@/components/Posts/types'
 import { populated } from '@/components/Posts/types'
+import { defaultLocale, languageTag, type Locale, localizePath } from '@/i18n/locales'
 
 import { BLOG_FEED_PATH, BLOG_PATH, postPath } from './postPath'
 
@@ -32,19 +33,29 @@ export type RssFeedInput = {
   description: string
   /** Published posts, newest first. */
   posts: PostSummary[]
+  /** The feed's locale: its `<language>` and its URLs' prefix. The default locale's by default. */
+  locale?: Locale
 }
 
 /**
  * The blog's RSS 2.0 feed: one `<item>` per post with its absolute URL (link and guid), title,
  * excerpt, publication date, categories and authors (`dc:creator`). Every URL is absolute, from
- * `siteUrl`; every editor-written string is escaped.
+ * `siteUrl`; every editor-written string is escaped. One feed per locale (`/pt/blog/rss.xml`):
+ * the same posts, in the locale's words where translated.
  */
-export const buildRssFeed = ({ description, posts, siteUrl, title }: RssFeedInput): string => {
+export const buildRssFeed = ({
+  description,
+  locale = defaultLocale,
+  posts,
+  siteUrl,
+  title,
+}: RssFeedInput): string => {
   const origin = siteUrl.replace(/\/+$/, '')
+  const at = (path: string) => `${origin}${localizePath(path, locale)}`
   const items = posts
     .filter((post) => post.slug)
     .map((post) => {
-      const url = `${origin}${postPath(post.slug!)}`
+      const url = at(postPath(post.slug!))
       return [
         '<item>',
         element('title', post.title),
@@ -64,10 +75,10 @@ export const buildRssFeed = ({ description, posts, siteUrl, title }: RssFeedInpu
     '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">',
     '<channel>',
     element('title', title),
-    element('link', `${origin}${BLOG_PATH}`),
+    element('link', at(BLOG_PATH)),
     element('description', description),
-    '<language>en</language>',
-    `<atom:link href="${escapeXml(`${origin}${BLOG_FEED_PATH}`)}" rel="self" type="application/rss+xml"/>`,
+    element('language', languageTag(locale)),
+    `<atom:link href="${escapeXml(at(BLOG_FEED_PATH))}" rel="self" type="application/rss+xml"/>`,
     element('lastBuildDate', lastBuild),
     ...items,
     '</channel>',

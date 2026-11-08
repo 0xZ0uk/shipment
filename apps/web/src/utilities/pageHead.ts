@@ -1,4 +1,5 @@
 import type { LoadPageResult } from '@/app/_frontend/pages.functions'
+import { localeHead } from '@/i18n/head'
 
 import { gtagScripts } from './googleAnalytics'
 import { pagePath } from './pagePath'
@@ -18,8 +19,8 @@ export type HeadInput = {
   ogType?: 'article' | 'website'
   /** Extra tags after the Open Graph ones (`article:published_time`…). */
   meta?: HeadMeta[]
-  /** Extra links after the canonical one (`prev`/`next`). */
-  links?: { href: string; rel: string }[]
+  /** Extra links after the canonical one (hreflang alternates, `prev`/`next`). */
+  links?: { href: string; hrefLang?: string; rel: string }[]
   /** Serialized JSON-LD nodes. */
   jsonLd?: string[]
   gaMeasurementId?: null | string
@@ -79,6 +80,9 @@ export const absoluteMediaURL = (siteUrl: string, image: unknown): string | unde
  *
  * The canonical link and `og:url` come from `canonicalSlug`, not `page.slug`: an A/B variant
  * served at the original's URL (or opened by an editor at its own) points at the original.
+ * With several locales, they're in the page's locale, with hreflang alternates for its
+ * translations; a page shown in the default locale's words for want of a translation points at
+ * the default-locale page and isn't indexed (`localeHead`).
  */
 export const pageHead = (data?: LoadPageResult): HeadResult => {
   const page = data?.page
@@ -87,13 +91,23 @@ export const pageHead = (data?: LoadPageResult): HeadResult => {
     return { meta: [{ title: siteName }] }
   }
 
+  const locale = localeHead({
+    fallback: data.fallback,
+    locale: data.locale,
+    path: pagePath(data.canonicalSlug),
+    siteUrl: data.siteUrl,
+    translations: data.translations,
+  })
+
   return headTags({
     description: page.meta?.description,
     gaMeasurementId: data.gaMeasurementId,
     imageURL: absoluteMediaURL(data.siteUrl, page.meta?.image),
     jsonLd: data.jsonLd,
-    noindex: page.noindex,
+    links: locale.links,
+    meta: locale.meta,
+    noindex: page.noindex || locale.noindex,
     title: page.meta?.title || (page.title ? `${page.title} | ${siteName}` : siteName),
-    url: `${data.siteUrl}${pagePath(data.canonicalSlug)}`,
+    url: locale.url,
   })
 }
