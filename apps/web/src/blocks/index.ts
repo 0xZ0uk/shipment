@@ -14,6 +14,7 @@ import { EmbedConfig } from './Embed/config'
 import { FaqConfig } from './Faq/config'
 import { FeatureRowsConfig } from './FeatureRows/config'
 import { FeaturesConfig } from './Features/config'
+import { FormConfig } from './Form/config'
 import { GalleryConfig } from './Gallery/config'
 import { GlobalSectionConfig } from './GlobalSection/config'
 import { HeroConfig } from './Hero/config'
@@ -42,6 +43,7 @@ export const blocks: Block[] = [
   LogosConfig,
   StatsConfig,
   CtaConfig,
+  FormConfig,
   PricingConfig,
   MediaBlockConfig,
   GalleryConfig,

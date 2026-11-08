@@ -34,6 +34,7 @@ import { RowLabel as RowLabel_1f6ff6ff633e3695d348f4f3c58f1466 } from '@/Footer/
 import { RowLabel as RowLabel_881d177759bf43ec466dd71c19bfba23 } from '@/blocks/shared/RowLabel'
 import { AssistantNavLink as AssistantNavLink_f8988aa121d95a35ca8909d17453c53e } from '@shipment/payload-plugin-assistant/admin/AssistantNavLink'
 import { SeoNavLink as SeoNavLink_3d7aee1cd51fbf4662c25c06ed93689b } from '@shipment/payload-seo-analyzer/client'
+import { FormsNavLink as FormsNavLink_f52755bbcfa6884da04ddae9eba88746 } from '@/forms/admin/FormsNavLink'
 import { SocialsDashboardWidget as SocialsDashboardWidget_6f75135b89b4101eea84a09400aa6a84 } from '@shipment/payload-plugin-socials/client'
 import { SocialsNavLink as SocialsNavLink_6f75135b89b4101eea84a09400aa6a84 } from '@shipment/payload-plugin-socials/client'
 import { FolderIcon as FolderIcon_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
@@ -47,6 +48,7 @@ import { RedirectManagerView as RedirectManagerView_566a4016f5c99fe9afdd1f55ba98
 import { PerformanceView as PerformanceView_566a4016f5c99fe9afdd1f55ba9890f7 } from '@shipment/payload-seo-analyzer/views'
 import { SchemaBuilderView as SchemaBuilderView_566a4016f5c99fe9afdd1f55ba9890f7 } from '@shipment/payload-seo-analyzer/views'
 import { SocialsAdminView as SocialsAdminView_9c8c7694599de0f7b3353aa5af430815 } from '@shipment/payload-plugin-socials/rsc'
+import { FormsView as FormsView_b77df0d27b5aaa3c7a473aa616ea6c8b } from '@/forms/admin/FormsView'
 import { OAuthContinueView as OAuthContinueView_a6570727fdd7df48fb373c576d1a113e } from '@shipment/payload-plugin-mcp/client'
 import { WelcomeWidget as WelcomeWidget_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 import { CollectionCards as CollectionCards_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
@@ -96,6 +98,7 @@ export const importMap = {
   "@/blocks/shared/RowLabel#RowLabel": RowLabel_881d177759bf43ec466dd71c19bfba23,
   "@shipment/payload-plugin-assistant/admin/AssistantNavLink#AssistantNavLink": AssistantNavLink_f8988aa121d95a35ca8909d17453c53e,
   "@shipment/payload-seo-analyzer/client#SeoNavLink": SeoNavLink_3d7aee1cd51fbf4662c25c06ed93689b,
+  "@/forms/admin/FormsNavLink#FormsNavLink": FormsNavLink_f52755bbcfa6884da04ddae9eba88746,
   "@shipment/payload-plugin-socials/client#SocialsDashboardWidget": SocialsDashboardWidget_6f75135b89b4101eea84a09400aa6a84,
   "@shipment/payload-plugin-socials/client#SocialsNavLink": SocialsNavLink_6f75135b89b4101eea84a09400aa6a84,
   "@payloadcms/ui#FolderIcon": FolderIcon_3817bf644402e67bfe6577f60ef982de,
@@ -109,6 +112,7 @@ export const importMap = {
   "@shipment/payload-seo-analyzer/views#PerformanceView": PerformanceView_566a4016f5c99fe9afdd1f55ba9890f7,
   "@shipment/payload-seo-analyzer/views#SchemaBuilderView": SchemaBuilderView_566a4016f5c99fe9afdd1f55ba9890f7,
   "@shipment/payload-plugin-socials/rsc#SocialsAdminView": SocialsAdminView_9c8c7694599de0f7b3353aa5af430815,
+  "@/forms/admin/FormsView#FormsView": FormsView_b77df0d27b5aaa3c7a473aa616ea6c8b,
   "@shipment/payload-plugin-mcp/client#OAuthContinueView": OAuthContinueView_a6570727fdd7df48fb373c576d1a113e,
   "@payloadcms/ui/rsc#WelcomeWidget": WelcomeWidget_ab83ff7e88da8d3530831f296ec4756a,
   "@payloadcms/ui/rsc#CollectionCards": CollectionCards_ab83ff7e88da8d3530831f296ec4756a,

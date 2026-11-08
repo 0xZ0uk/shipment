@@ -11,6 +11,7 @@ import { embedMeta } from './Embed/meta'
 import { faqMeta } from './Faq/meta'
 import { featureRowsMeta } from './FeatureRows/meta'
 import { featuresMeta } from './Features/meta'
+import { formMeta } from './Form/meta'
 import { galleryMeta } from './Gallery/meta'
 import { globalSectionMeta } from './GlobalSection/meta'
 import { heroMeta } from './Hero/meta'
@@ -39,6 +40,7 @@ export const blockMetas: { [K in LayoutBlockType]: BlockMeta<unknown> } = {
   logos: logosMeta,
   stats: statsMeta,
   cta: ctaMeta,
+  form: formMeta,
   pricing: pricingMeta,
   mediaBlock: mediaBlockMeta,
   gallery: galleryMeta,

@@ -40,6 +40,7 @@ import type { Page, Post } from './payload-types'
 import { abMeasurementConfig } from './plugins/abMeasurement'
 import { abStorage, isAbVariant } from './plugins/abTesting'
 import { edgeCachePurge } from './plugins/edgeCachePurge'
+import { formsPlugin } from './plugins/forms'
 import { assistantAuditSink, assistantConversations, assistantTestModel } from './plugins/assistant'
 import { workersAssistantRateLimit } from './plugins/assistantRateLimit'
 import { limitVersions } from './plugins/limitVersions'
@@ -333,6 +334,10 @@ export default buildConfig({
     // composer at /admin/socials, Pinterest only. Disabled until SOCIALS_ENCRYPTION_KEY is set;
     // the schema is the same either way. The Cron Trigger runs its queue (src/server.ts).
     SocialsPlugin,
+    // Contact and newsletter forms (the Form block): POST /api/forms/:form, verified with
+    // Turnstile, stored in the separate FORMS_D1 database (never this one), and /admin/forms with
+    // CSV exports. Owners are emailed through `email` above (FORMS_NOTIFY_EMAIL). src/forms.
+    formsPlugin(cloudflare, { waitUntil }),
     // Purges Workers Cache when page HTML changes: pages, posts (and their authors and
     // categories), header, footer, media, sections, redirects and the A/B manifest
     // (src/plugins/edgeCachePurge.ts). After the plugins whose collections it hooks
