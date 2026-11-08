@@ -3,6 +3,8 @@
  * form: "sections.3.items.0.title".
  */
 
+import { MARKER_PARAM } from './constants.ts'
+
 export type PathSegment = string | number
 
 /** "3" in "sections.3.title": a row index. */
@@ -152,4 +154,25 @@ export function safeLinkUrl(raw: unknown): string | null {
   if (/^(?:\/(?!\/)|#|\?|\.\.?\/)/.test(url)) return url
   const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(url)?.[1]?.toLowerCase()
   return scheme && ['http', 'https', 'mailto', 'tel'].includes(scheme) ? url : null
+}
+
+/** The site URL or path with the edit/preview marker (`?_onpage=1`) added; idempotent. */
+export function withMarker(url: string): string {
+  return editSearch(url, (q) => q.set(MARKER_PARAM, '1'))
+}
+
+/** The site URL or path without the edit/preview marker. */
+export function withoutMarker(url: string): string {
+  return editSearch(url, (q) => q.delete(MARKER_PARAM))
+}
+
+/** Does this search string (`?a=1&_onpage=1`) carry the edit/preview marker? */
+export const hasMarker = (search: string): boolean => new URLSearchParams(search).has(MARKER_PARAM)
+
+/** Change the query of an absolute URL or a site path, keeping its form (and the hash). */
+function editSearch(url: string, edit: (q: URLSearchParams) => void): string {
+  const base = 'https://onpage.invalid'
+  const u = new URL(url, base)
+  edit(u.searchParams)
+  return url.startsWith('/') && u.origin === base ? `${u.pathname}${u.search}${u.hash}` : u.href
 }

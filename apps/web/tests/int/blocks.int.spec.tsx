@@ -7,10 +7,18 @@ import {
 } from '@tanstack/react-router'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
 import { blocks, pageBlockSlugs, sectionBlockSlugs } from '@/blocks'
-import { blockComponents, type LayoutBlock, type LayoutBlockType } from '@/blocks/components'
+import {
+  blockLoaders,
+  collectBlockTypes,
+  getLoadedBlock,
+  preloadBlocks,
+  preloadBlockTypes,
+  type LayoutBlock,
+  type LayoutBlockType,
+} from '@/blocks/components'
 import { blockMetas } from '@/blocks/gallery'
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { DraftModeProvider } from '@/blocks/shared/draftMode'
@@ -39,11 +47,41 @@ const render = (block: LayoutBlock, draft = true) =>
 
 const slugs = Object.keys(blockMetas) as LayoutBlockType[]
 
+// Blocks are separate chunks that the page routes' loaders preload before rendering; do the same.
+beforeAll(() => preloadBlockTypes(slugs))
+
 describe('block registry', () => {
   it('has a component and gallery entry for every configured block', () => {
     const configured = blocks.map(({ slug }) => slug).sort()
-    expect(Object.keys(blockComponents).sort()).toEqual(configured)
+    expect(Object.keys(blockLoaders).sort()).toEqual(configured)
     expect(Object.keys(blockMetas).sort()).toEqual(configured)
+  })
+
+  it('loads each block from its own chunk, and only once', async () => {
+    await preloadBlockTypes(slugs)
+    for (const slug of slugs) {
+      const component = getLoadedBlock(slug)
+      expect(component, slug).toBeTypeOf('function')
+      expect(await blockLoaders[slug]()).toBe(component)
+    }
+  })
+
+  it('collects the block types of a layout, reusable sections included', () => {
+    const layout = [
+      { blockType: 'hero', id: 'a' },
+      { blockType: 'faq', id: 'b' },
+      {
+        blockType: 'globalSection',
+        id: 'c',
+        reusableSection: {
+          id: 1,
+          layout: [{ blockType: 'cta', id: 'd' }],
+        },
+      },
+      { blockType: 'globalSection', id: 'e', reusableSection: 2 },
+    ] as unknown as LayoutBlock[]
+    expect([...collectBlockTypes(layout)].sort()).toEqual(['cta', 'faq', 'globalSection', 'hero'])
+    expect([...collectBlockTypes(null)]).toEqual([])
   })
 
   it('keeps page-only blocks out of reusable sections', () => {
@@ -106,6 +144,10 @@ describe('block rendering', () => {
     ).not.toThrow()
   })
 
+  it('renders nothing for a block type that is no longer registered', () => {
+    expect(render({ blockType: 'removedBlock', id: 'stale' } as unknown as LayoutBlock)).toBe('')
+  })
+
   it('shows visitors nothing for a global section whose section is missing', () => {
     const block = { blockType: 'globalSection', id: 'missing' } as LayoutBlock
     expect(render(block)).toContain('Choose a reusable section')
@@ -114,8 +156,9 @@ describe('block rendering', () => {
 })
 
 describe('seeded homepage', () => {
-  it('renders every block of the landing page POST /api/seed/home creates', () => {
+  it('renders every block of the landing page POST /api/seed/home creates', async () => {
     const layout = homePage.layout as LayoutBlock[]
+    await preloadBlocks(layout)
     const html = renderToStaticMarkup(
       <RouterContextProvider router={router as never}>
         <DraftModeProvider draft={false}>

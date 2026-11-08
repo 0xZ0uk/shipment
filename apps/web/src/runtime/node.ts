@@ -13,6 +13,10 @@ export const cloudflareEnv = proxy.env
 
 export const isWorkersRuntime = false
 
+// No resized images under Node: uploads live in `media/`, not R2, so `/img/*` redirects to the
+// original file and pages render without `srcset` (src/utilities/responsiveImage.ts).
+export const images: ImagesBinding | undefined = undefined
+
 // Long-lived Node process: background promises survive the response on their own.
 export const waitUntil: ((promise: Promise<unknown>) => void) | undefined = undefined
 

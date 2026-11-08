@@ -46,3 +46,15 @@ export const HEADER = {
   /** Stale-write guard: the `updatedAt` the editor last saw. */
   ifUnmodifiedSince: 'x-onpage-if-unmodified-since',
 } as const
+
+/**
+ * The query parameter that gives edit-mode and preview-link pages their own
+ * URL (`/about?_onpage=1`). An edge cache keyed by URL (Workers Cache) never
+ * sees cookies, so without it an editor could be served the cached published
+ * page. It is only a cache key: it grants nothing, and the server still checks
+ * the sealed mode cookie or preview grant. A marked URL without them renders
+ * the published page, so a host must never let a shared cache store a
+ * response to a marked URL, whatever it renders (the app does it in
+ * `src/start.ts`); otherwise that page would be served to the next editor.
+ */
+export const MARKER_PARAM = '_onpage'

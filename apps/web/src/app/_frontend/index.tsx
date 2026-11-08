@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
+import { preloadBlocks } from '@/blocks/components'
 import { PageTemplate } from '@/components/PageTemplate'
 import { pageHead } from '@/utilities/pageHead'
 import { validateDraftSearch } from '@/utilities/validateDraftSearch'
@@ -9,7 +10,12 @@ import { loadPage } from './pages.functions'
 export const Route = createFileRoute('/_frontend/')({
   validateSearch: validateDraftSearch,
   loaderDeps: ({ search }) => ({ draft: search.draft }),
-  loader: ({ deps }) => loadPage({ data: { draft: deps.draft, slug: 'home' } }),
+  loader: async ({ deps }) => {
+    const data = await loadPage({ data: { draft: deps.draft, slug: 'home' } })
+    // The page's block components, so it renders them (and hydrates) without waiting for chunks.
+    await preloadBlocks(data.page?.layout)
+    return data
+  },
   head: ({ loaderData }) => pageHead(loaderData),
   component: HomePage,
 })

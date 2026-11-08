@@ -53,7 +53,14 @@ Unlike Next, the secret goes on the session, not on a proxy: Start request middl
 The frontend layout route ([Shipment](../../../apps/web/src/app/_frontend.tsx)):
 
 ```tsx
-import { OnPage } from '@shipment/onpage-tanstack-start'
+import { OnPage, retainOnPageMarker, validateOnPageSearch } from '@shipment/onpage-tanstack-start'
+
+export const Route = createFileRoute('/_frontend')({
+  component: FrontendLayout,
+  // Keeps the edit/preview marker (?_onpage=1) on every link and navigation.
+  validateSearch: validateOnPageSearch,
+  search: { middlewares: [retainOnPageMarker] },
+})
 
 function FrontendLayout() {
   return (
@@ -66,6 +73,8 @@ function FrontendLayout() {
 ```
 
 `<OnPage />` renders nothing unless an editor turned on edit or preview mode. Visitors issue no extra requests: without a hint cookie the mount does nothing at all.
+
+**Edit, preview and preview-link pages have their own URL.** While a mode is on, page URLs carry `?_onpage=1` (`MARKER_PARAM` in core), so a cache keyed by URL (Workers Cache, a CDN) that stores the published `/about` never answers an editor's `/about?_onpage=1`. The plugin's redirects add it (**Edit on page**, **Preview**/**Edit**, preview links) and **Exit** drops it; the route options above keep it across client-side navigation, so reloads and links opened in a new tab keep it too. When an editor or link viewer lands on an unmarked URL (typed, bookmarked), `<OnPage />` reloads the page at the marked one once its state lookup confirms the mode. The marker grants nothing: reads still check the sealed cookie or grant, and a marked URL without them renders the published page. Responses that render drafts are `Cache-Control: private, no-store`.
 
 ## 4. Read drafts with markers
 
