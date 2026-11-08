@@ -229,7 +229,7 @@ test.describe('A second locale', () => {
     expect(response.headers()['cache-tag']?.split(',')).toContain(`page:/${slug}`)
   })
 
-  test("searches the visitor's locale", async ({ request }) => {
+  test("searches the visitor's locale", async ({ page, request }) => {
     // The index is written in the background after a publish.
     await expect
       .poll(async () => {
@@ -239,12 +239,18 @@ test.describe('A second locale', () => {
       .toContain(`/pt/${slug}`)
     const english = await (await request.get('/api/search?q=caiaque')).json()
     expect(english.results).toEqual([])
+
+    // The /search page links each result once prefixed, not `/pt/pt/…`.
+    await page.goto('/pt/search?q=caiaque')
+    await expect(page.locator('main ol a').first()).toHaveAttribute('href', `/pt/${slug}`)
   })
 
   test('edits the Portuguese page on the page, leaving English alone', async () => {
     const id = ids.find(({ collection }) => collection === 'pages')!.id
     await admin.goto(`/admin/collections/pages/${id}?locale=pt`)
     await expect(admin.locator('#field-title')).toHaveValue('Passeios de caiaque')
+    // `?locale=pt` picks the content being edited; the admin itself stays English.
+    expect(await admin.evaluate(() => document.documentElement.lang)).toBe('en')
     const [editor] = await Promise.all([
       context.waitForEvent('page'),
       admin.getByRole('button', { name: 'Edit on page' }).click(),

@@ -86,8 +86,15 @@ export const publicSearchStr = (searchStr: string): string => {
   return rest ? `?${rest}` : ''
 }
 
-/** The locale in a router state: its internal `locale` param, else the default. */
-export const selectLocale = (state: { location: { search: unknown } }): Locale => {
+/**
+ * The locale in a router state: its internal `locale` param, else the default. Paths outside the
+ * site's pages (`/admin`, `/api`…) are always the default: the admin's own locale selector uses
+ * the same `?locale=` param for the content being edited, not the admin's language.
+ */
+export const selectLocale = (state: {
+  location: { pathname: string; search: unknown }
+}): Locale => {
+  if (isUnprefixedPath(state.location.pathname)) return defaultLocale
   const locale = (state.location.search as { locale?: unknown }).locale
   return isLocale(locale) ? locale : defaultLocale
 }

@@ -5,7 +5,7 @@ import React, { useId } from 'react'
 import { ResultExcerpt } from '@/components/SiteSearch/ResultText'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { localizePath } from '@/i18n/locales'
+import { localizePath, splitLocalePath } from '@/i18n/locales'
 import { useLocale } from '@/i18n/routing'
 import { MAX_QUERY_LENGTH } from '@/search/matchQuery'
 import { siteName } from '@/utilities/siteName'
@@ -98,10 +98,12 @@ function SearchPage() {
         <ol className="mt-4 divide-y divide-border">
           {results.map((result) => (
             <li className="py-5" key={`${result.collection}:${result.id}`}>
-              {/* An index path (`/pricing`), not a typed route. */}
+              {/* An index path (`/pricing`, `/pt/pricing`), not a typed route. The router adds the
+                  visitor's locale prefix back (the layout keeps `locale`), so it gets the
+                  unprefixed path. */}
               <Link
                 className="text-lg font-medium underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
-                to={result.path as '/'}
+                to={splitLocalePath(result.path).path as '/'}
               >
                 {result.title || result.path}
               </Link>
