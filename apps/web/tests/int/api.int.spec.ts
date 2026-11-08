@@ -5,6 +5,7 @@ import { describe, it, beforeAll, expect } from 'vitest'
 
 import { seedHome } from './localD1/seedHome'
 import { seoSidebarParity } from './localD1/seoSidebarParity'
+import { socialsAtomicUpdate } from './localD1/socialsAtomicUpdate'
 
 let payload: Payload
 
@@ -27,3 +28,4 @@ describe('API', () => {
 // spec file booting Payload would start another workerd on the same SQLite file (SQLITE_BUSY).
 seoSidebarParity(() => payload)
 seedHome(() => payload)
+socialsAtomicUpdate(() => payload)
