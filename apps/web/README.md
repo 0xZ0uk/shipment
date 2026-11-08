@@ -319,12 +319,7 @@ The **Form** block (`src/blocks/Form`) renders one of two fixed forms: **contact
 - **Turnstile.** Create a widget for the site's hostnames (dashboard > Turnstile), then set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` (the secret is `@sensitive`). With neither set, development uses Cloudflare's always-pass [test keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/), so `pnpm dev` and the e2e tests need nothing. A deployed Worker without both keys refuses every post (`503 not_configured`), and the block shows "This form isn't available right now" in place of the fields. It never accepts an unverified post.
 - **Caching.** The page HTML is the same for everyone, so pages with a form stay edge-cacheable. The block fetches the site key from `GET /api/forms/config` and loads Cloudflare's script in the browser.
 
-Before the first deploy, create the databases and put their ids in `wrangler.jsonc`. The ids there are placeholders (`FORMS_D1_*_ID_TODO`).
-
-```bash
-pnpm wrangler d1 create shipment-forms
-pnpm wrangler d1 create shipment-forms-staging
-```
+The databases (`shipment-forms`, `shipment-forms-staging`) exist and their ids are in `wrangler.jsonc`; a site made from the template creates its own with `pnpm wrangler d1 create <name>` and puts the ids there.
 
 ### Current limitations
 

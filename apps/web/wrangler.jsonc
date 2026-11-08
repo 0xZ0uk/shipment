@@ -44,9 +44,7 @@
       // `pnpm forms-store:migrate:remote` apply it, and the store also applies it on first use.
       "binding": "FORMS_D1",
       "database_name": "shipment-forms",
-      // TODO before deploying: `wrangler d1 create shipment-forms` and put its id here. Local dev
-      // and CI work with any id (the local D1 in `.wrangler/state`).
-      "database_id": "FORMS_D1_PRODUCTION_ID_TODO",
+      "database_id": "68b2064e-187d-4545-8d18-fdc83dfe518c",
       "remote": true,
     },
   ],
@@ -195,8 +193,7 @@
         {
           "binding": "FORMS_D1",
           "database_name": "shipment-forms-staging",
-          // TODO before deploying: `wrangler d1 create shipment-forms-staging`.
-          "database_id": "FORMS_D1_STAGING_ID_TODO",
+          "database_id": "b3592983-ee30-4380-a0ab-4d3b5759b08c",
           "remote": true,
         },
       ],
