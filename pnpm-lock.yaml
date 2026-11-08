@@ -185,6 +185,9 @@ catalogs:
     '@payloadcms/db-sqlite':
       specifier: 4.0.0-beta.6
       version: 4.0.0-beta.6
+    '@payloadcms/email-resend':
+      specifier: 4.0.0-beta.6
+      version: 4.0.0-beta.6
     '@payloadcms/graphql':
       specifier: 4.0.0-beta.6
       version: 4.0.0-beta.6
@@ -274,6 +277,9 @@ importers:
       '@payloadcms/db-d1-sqlite':
         specifier: 'catalog:'
         version: 4.0.0-beta.6(@cloudflare/workers-types@5.20261023.1)(@libsql/client@0.14.0)(payload@4.0.0-beta.6(patch_hash=a9abd1297b478daa72f3d031352b2d5dcaaba1e9a47f001defbfd3ea54267c48)(graphql@16.14.2)(supports-color@7.2.0)(typescript@6.0.3))(supports-color@7.2.0)
+      '@payloadcms/email-resend':
+        specifier: 'catalog:'
+        version: 4.0.0-beta.6(payload@4.0.0-beta.6(patch_hash=a9abd1297b478daa72f3d031352b2d5dcaaba1e9a47f001defbfd3ea54267c48)(graphql@16.14.2)(supports-color@7.2.0)(typescript@6.0.3))
       '@payloadcms/graphql':
         specifier: 'catalog:'
         version: 4.0.0-beta.6(graphql@16.14.2)(payload@4.0.0-beta.6(patch_hash=a9abd1297b478daa72f3d031352b2d5dcaaba1e9a47f001defbfd3ea54267c48)(graphql@16.14.2)(supports-color@7.2.0)(typescript@6.0.3))(typescript@6.0.3)
@@ -2974,6 +2980,12 @@ packages:
 
   '@payloadcms/drizzle@4.0.0-beta.6':
     resolution: {integrity: sha512-PDlC78XXbSSQZKRQYs4QHjRjKzv4jLbqWthroVN3d/gz3Tphyyc9j8elmB7kK3IGQWeK70oSapTc3J7mRBIIPQ==}
+    peerDependencies:
+      payload: 4.0.0-beta.6
+
+  '@payloadcms/email-resend@4.0.0-beta.6':
+    resolution: {integrity: sha512-REApC/PSe4hMfpM8q3vCmKohuQlgDCUpXb3TQvo/44hMFx96nbPLCvRnP0gWUOmNocAai5epvizzcPLzSsSasg==}
+    engines: {node: '>=24.22.1'}
     peerDependencies:
       payload: 4.0.0-beta.6
 
@@ -9397,6 +9409,10 @@ snapshots:
       - prisma
       - sql.js
       - sqlite3
+
+  '@payloadcms/email-resend@4.0.0-beta.6(payload@4.0.0-beta.6(patch_hash=a9abd1297b478daa72f3d031352b2d5dcaaba1e9a47f001defbfd3ea54267c48)(graphql@16.14.2)(supports-color@7.2.0)(typescript@6.0.3))':
+    dependencies:
+      payload: 4.0.0-beta.6(patch_hash=a9abd1297b478daa72f3d031352b2d5dcaaba1e9a47f001defbfd3ea54267c48)(graphql@16.14.2)(supports-color@7.2.0)(typescript@6.0.3)
 
   '@payloadcms/graphql@4.0.0-beta.6(graphql@16.14.2)(payload@4.0.0-beta.6(patch_hash=a9abd1297b478daa72f3d031352b2d5dcaaba1e9a47f001defbfd3ea54267c48)(graphql@16.14.2)(supports-color@7.2.0)(typescript@6.0.3))(typescript@6.0.3)':
     dependencies:

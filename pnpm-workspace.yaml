@@ -10,6 +10,8 @@ catalog:
   '@payloadcms/db-d1-sqlite': 4.0.0-beta.6
   # In-memory SQLite for the onpage plugin's integration tests (packages/onpage).
   '@payloadcms/db-sqlite': 4.0.0-beta.6
+  # Email over Resend's HTTP API (apps/web/src/email.ts), when RESEND_API_KEY is set.
+  '@payloadcms/email-resend': 4.0.0-beta.6
   '@payloadcms/graphql': 4.0.0-beta.6
   '@payloadcms/live-preview-react': 4.0.0-beta.6
   '@payloadcms/plugin-seo': 4.0.0-beta.6
@@ -49,6 +51,7 @@ minimumReleaseAgeExclude:
   - '@payloadcms/db-d1-sqlite@4.0.0-beta.6'
   - '@payloadcms/db-sqlite@4.0.0-beta.6'
   - '@payloadcms/drizzle@4.0.0-beta.6'
+  - '@payloadcms/email-resend@4.0.0-beta.6'
   - '@payloadcms/graphql@4.0.0-beta.6'
   - '@payloadcms/richtext-lexical@4.0.0-beta.6'
   - '@payloadcms/tanstack-start@4.0.0-beta.6'

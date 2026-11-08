@@ -21,6 +21,13 @@ describe('API', () => {
     })
     expect(users).toBeDefined()
   })
+
+  // No `EMAIL` binding in wrangler.jsonc and no RESEND_API_KEY (src/email.ts): Payload logs
+  // emails instead of sending them, so local dev and CI need no email credentials.
+  it.skipIf(!!process.env.RESEND_API_KEY)('falls back to the console email adapter', async () => {
+    expect((await config).email).toBeUndefined()
+    expect(payload.email.name).toBe('console')
+  })
 })
 
 // Suites that need Payload on the local D1 run from this file, with this instance: a second

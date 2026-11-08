@@ -26,6 +26,7 @@ import { Tags } from './collections/Tags'
 import { Pages } from './collections/Pages'
 import { Sections } from './collections/Sections'
 import { blocks } from './blocks'
+import { createEmailAdapter } from './email'
 import { Footer } from './Footer/config'
 import { Header } from './Header/config'
 import { seedHomeEndpoint } from './endpoints/seed'
@@ -71,6 +72,16 @@ export default buildConfig({
   blocks,
   collections: [Pages, Sections, Users, Media, Folders, Tags],
   editor: defaultLexical,
+  // Forgot-password emails, the SEO alerts digest (SEO_ALERT_EMAIL) and anything else that calls
+  // `payload.sendEmail`. Cloudflare Email Service when the `EMAIL` send_email binding is declared,
+  // else Resend when RESEND_API_KEY is set, else Payload's console adapter (logs, sends nothing).
+  // See src/email.ts and README, "Email".
+  email: createEmailAdapter({
+    binding: (cloudflare as { EMAIL?: SendEmail }).EMAIL,
+    resendApiKey: process.env.RESEND_API_KEY || cloudflare.RESEND_API_KEY || undefined,
+    fromAddress: process.env.EMAIL_FROM_ADDRESS || cloudflare.EMAIL_FROM_ADDRESS || undefined,
+    fromName: process.env.EMAIL_FROM_NAME || cloudflare.EMAIL_FROM_NAME || siteName,
+  }),
   // POST /api/seed/home: the template's landing page as the homepage (src/endpoints/seed).
   endpoints: [seedHomeEndpoint],
   globals: [Header, Footer],
@@ -198,8 +209,8 @@ export default buildConfig({
     // the external link checker scans in budgeted steps; all four passed on a deployed
     // Worker. AI features call OpenRouter (`OPENROUTER_API_KEY`, capped by the key's credit
     // limit in OpenRouter). The alerts digest sends nothing until SEO_ALERT_WEBHOOK_URL or
-    // SEO_ALERT_EMAIL is set. GSC stays off until a Google OAuth client exists (it also needs a main-D1
-    // migration for `seo-gsc-auth`). Whole-site scans (link graph, keywords,
+    // SEO_ALERT_EMAIL is set (email also needs a transport: `email` above). GSC stays off
+    // until a Google OAuth client exists (it also needs a main-D1 migration for `seo-gsc-auth`). Whole-site scans (link graph, keywords,
     // cannibalization…) and IndexNow stay off until the real site exists (GitHub issues #27 and #28).
     seoAnalyzerPlugin({
       collections: ['pages'],

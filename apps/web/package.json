@@ -53,6 +53,7 @@
     "@lexical/selection": "catalog:",
     "@lexical/utils": "catalog:",
     "@payloadcms/db-d1-sqlite": "catalog:",
+    "@payloadcms/email-resend": "catalog:",
     "@payloadcms/graphql": "catalog:",
     "@payloadcms/live-preview-react": "catalog:",
     "@payloadcms/plugin-seo": "catalog:",
