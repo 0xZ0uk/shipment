@@ -10,8 +10,9 @@ import type { Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { paragraph, richText } from '@/blocks/shared/lexical'
-import type { Page } from '@/payload-types'
-import { reindexSearch } from '@/plugins/siteSearch'
+import type { Page, Section } from '@/payload-types'
+import { referencesSection } from '@/blocks/GlobalSection/references'
+import { reindexSearch, reindexSearchBatch } from '@/plugins/siteSearch'
 import { siteSearchIndex } from '@/search/siteIndex'
 
 const stamp = Date.now()
@@ -169,5 +170,67 @@ export const siteSearch = (getPayload: () => Payload) =>
       expect(result.pages.removed).toBeGreaterThanOrEqual(1)
       expect(await paths(word)).toEqual([path])
       expect(await paths(stale)).toEqual([])
+    })
+
+    it('reindexes one batch per call, ending with next: null', async () => {
+      const { id, word, path } = await create(9)
+      await eventually(async () => expect(await paths(word)).toEqual([path]))
+      await siteSearchIndex.remove('pages', id)
+
+      let cursor: { collection: string; page: number } | null = { collection: 'pages', page: 1 }
+      const pages: number[] = []
+      while (cursor) {
+        const step = await reindexSearchBatch(payload, cursor)
+        pages.push(step.page)
+        cursor = step.next
+      }
+      expect(pages[0]).toBe(1)
+      expect(pages).toEqual(pages.map((_, i) => i + 1))
+      expect(await paths(word)).toEqual([path])
+    })
+
+    it('syncs the pages that show a reusable section when the section changes', async () => {
+      const before = unique(100)
+      const after = unique(101)
+      const section = await payload.create({
+        collection: 'sections',
+        // A section's blocks are a page's minus the Global section block.
+        data: {
+          title: `Search test section ${stamp}`,
+          layout: layout(`Section copy ${before}.`) as Section['layout'],
+        },
+        overrideAccess: true,
+      })
+      try {
+        const { path } = await create(10, {
+          layout: [{ blockType: 'globalSection', reusableSection: section.id }],
+        })
+        await eventually(async () => expect(await paths(before)).toEqual([path]))
+
+        await payload.update({
+          collection: 'sections',
+          id: section.id,
+          data: { layout: layout(`Section copy ${after}.`) as Section['layout'] },
+          overrideAccess: true,
+        })
+        await eventually(async () => expect(await paths(after)).toEqual([path]))
+        expect(await paths(before)).toEqual([])
+      } finally {
+        await payload.delete({ collection: 'sections', id: section.id, overrideAccess: true })
+      }
+    })
+
+    it('finds a reusable section anywhere in a stored page', () => {
+      const page = {
+        layout: [
+          { blockType: 'richText' },
+          { blockType: 'columns', columns: [{ blocks: [{ reusableSection: 7 }] }] },
+        ],
+      }
+      expect(referencesSection(page, 7)).toBe(true)
+      expect(referencesSection(page, '7')).toBe(true)
+      expect(referencesSection({ layout: [{ reusableSection: { id: 3 } }] }, 3)).toBe(true)
+      expect(referencesSection(page, 8)).toBe(false)
+      expect(referencesSection(null, 7)).toBe(false)
     })
   })

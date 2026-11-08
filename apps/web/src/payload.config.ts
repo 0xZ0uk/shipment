@@ -26,6 +26,7 @@ import { Tags } from './collections/Tags'
 import { Pages } from './collections/Pages'
 import { Sections } from './collections/Sections'
 import { blocks } from './blocks'
+import { referencesSection } from './blocks/GlobalSection/references'
 import { createEmailAdapter } from './email'
 import { Footer } from './Footer/config'
 import { Header } from './Header/config'
@@ -317,6 +318,8 @@ export default buildConfig({
         },
       },
       index: siteSearchIndex,
+      // A reusable section's text is indexed with every page that shows it.
+      referencedBy: { sections: referencesSection },
       waitUntil,
       rateLimit: searchRateLimit(cloudflare.SEARCH_RATE_LIMIT),
     }),
