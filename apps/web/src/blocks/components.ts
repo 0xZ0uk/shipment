@@ -72,11 +72,43 @@ export const loadBlock = (type: LayoutBlockType): Promise<AnyBlockComponent> => 
     },
     (error: unknown) => {
       loading.delete(type)
+      // In the browser a failed chunk is most likely a tab left open across a deploy (the old
+      // hashed chunks are gone): reload once to get the current deploy's assets, and keep the
+      // block suspended meanwhile instead of replacing the page with the error screen.
+      const reloaded =
+        typeof window !== 'undefined' &&
+        reloadForStaleChunk(window.sessionStorage, () => window.location.reload())
+      if (reloaded) return new Promise<never>(() => {})
       throw error
     },
   )
   loading.set(type, promise)
   return promise
+}
+
+const STALE_CHUNK_RELOAD_KEY = 'blocks:stale-chunk-reload'
+/** Within this long after a reload, another failure is a real error, not a stale tab. */
+const STALE_CHUNK_RELOAD_WINDOW_MS = 60_000
+
+/**
+ * Reloads the page once for a failed block chunk, unless it already did so within the last
+ * minute (so a chunk that's really missing errors instead of reloading in a loop). Returns
+ * whether it reloaded. Storage errors (private mode, blocked storage) mean no reload.
+ */
+export const reloadForStaleChunk = (
+  storage: Pick<Storage, 'getItem' | 'setItem'>,
+  reload: () => void,
+  now = Date.now(),
+): boolean => {
+  try {
+    const last = Number(storage.getItem(STALE_CHUNK_RELOAD_KEY))
+    if (last && now - last < STALE_CHUNK_RELOAD_WINDOW_MS) return false
+    storage.setItem(STALE_CHUNK_RELOAD_KEY, String(now))
+  } catch {
+    return false
+  }
+  reload()
+  return true
 }
 
 /**

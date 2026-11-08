@@ -1,9 +1,14 @@
 import React from 'react'
 import { renderToPipeableStream, renderToStaticMarkup } from 'react-dom/server'
 import { PassThrough } from 'node:stream'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import { getLoadedBlock, preloadBlocks, type LayoutBlock } from '@/blocks/components'
+import {
+  getLoadedBlock,
+  preloadBlocks,
+  reloadForStaleChunk,
+  type LayoutBlock,
+} from '@/blocks/components'
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 
 // A separate file from `blocks.int.spec.tsx`: that one preloads every block, and this one needs
@@ -41,5 +46,46 @@ describe('block loading on demand', () => {
     const html = renderToStaticMarkup(<RenderBlocks blocks={[block('stats')]} />)
 
     expect(html).toContain('data-block="stats"')
+  })
+})
+
+describe('reloadForStaleChunk', () => {
+  const memoryStorage = () => {
+    const items = new Map<string, string>()
+    return {
+      getItem: (key: string) => items.get(key) ?? null,
+      setItem: (key: string, value: string) => void items.set(key, value),
+    }
+  }
+
+  it('reloads once for a failed chunk, then lets the next failure within a minute through', () => {
+    const storage = memoryStorage()
+    const reload = vi.fn()
+
+    expect(reloadForStaleChunk(storage, reload, 1_000)).toBe(true)
+    expect(reloadForStaleChunk(storage, reload, 30_000)).toBe(false)
+    expect(reload).toHaveBeenCalledTimes(1)
+  })
+
+  it('reloads again after a minute (a later deploy)', () => {
+    const storage = memoryStorage()
+    const reload = vi.fn()
+
+    reloadForStaleChunk(storage, reload, 1_000)
+    expect(reloadForStaleChunk(storage, reload, 62_000)).toBe(true)
+    expect(reload).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not reload when storage is unavailable', () => {
+    const reload = vi.fn()
+    const blocked = {
+      getItem: () => {
+        throw new Error('SecurityError')
+      },
+      setItem: () => {},
+    }
+
+    expect(reloadForStaleChunk(blocked, reload)).toBe(false)
+    expect(reload).not.toHaveBeenCalled()
   })
 })
