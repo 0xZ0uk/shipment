@@ -293,8 +293,9 @@ function withReferenceHooks(
 ): CollectionConfig {
   const sync = (req: PayloadRequest, id: number | string) =>
     inBackground(options, req.payload, () => syncReferencing(req.payload, collection.slug, id))
-  const afterChange: CollectionAfterChangeHook = ({ data, doc, req }) => {
-    if (!isRestDraftSave(req, data)) sync(req, doc.id)
+  // A document just created isn't shown anywhere yet.
+  const afterChange: CollectionAfterChangeHook = ({ data, doc, operation, req }) => {
+    if (operation === 'update' && !isRestDraftSave(req, data)) sync(req, doc.id)
     return doc
   }
   const afterDelete: CollectionAfterDeleteHook = ({ id, req }) => sync(req, id)
