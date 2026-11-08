@@ -315,8 +315,9 @@ export type CoercedEnvSchema = {
   /**
    * **GA_MEASUREMENT_ID**  
    * Optional: GA4 measurement ID (`G-XXXXXXXXXX`, Admin > Data streams in Google Analytics).  
-   * Set, public pages load gtag.js and pages that run an A/B experiment tag their events with  
-   * the experiment, bucket and visitor id (custom dimensions to create: see the README, "GA4").  
+   * Set, public pages show a cookie banner and load gtag.js once the visitor accepts; pages that  
+   * run an A/B experiment then tag their events with the experiment, bucket and visitor id (custom  
+   * dimensions to create: see the README, "GA4").  
    * Unset, nothing GA-related renders or loads. It's public by design (it ships in the page), so  
    * it isn't sensitive. The admin, live preview, preview links and on-page editing never load it.  
    * Runs next to the Analytics Engine measurement above, not instead of it.  

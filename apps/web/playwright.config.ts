@@ -12,6 +12,12 @@ import 'varlock/auto-load'
 const port = Number(process.env.E2E_PORT || 3000)
 const baseURL = process.env.E2E_BASE_URL || `http://localhost:${port}`
 
+// An obviously fake GA4 id for the dev server the specs start: public pages then show the cookie
+// banner (`cookie-consent.e2e.spec.ts`, which routes googletagmanager.com away so nothing leaves
+// the machine). Every other spec starts with analytics already refused (`storageState`), so the
+// banner never covers what they click and nothing from Google loads.
+const E2E_GA_MEASUREMENT_ID = 'G-TESTE2E0000'
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -34,6 +40,22 @@ export default defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+
+    storageState: {
+      cookies: [
+        {
+          name: 'cookie_consent',
+          value: 'denied',
+          domain: new URL(baseURL).hostname,
+          path: '/',
+          expires: -1,
+          httpOnly: false,
+          secure: false,
+          sameSite: 'Lax',
+        },
+      ],
+      origins: [],
+    },
   },
   projects: [
     {
@@ -56,6 +78,12 @@ export default defineConfig({
         // APP_ENV=production or staging), so the assistant spec needs no OpenRouter key.
         // SITE_URL: published pages opt in to edge caching only when it's set (cached HTML must
         // not carry host-derived URLs), so the specs exercise the same headers as production.
-        env: { ASSISTANT_TEST_MODEL: '1', SITE_URL: baseURL },
+        // GA_MEASUREMENT_ID: see `E2E_GA_MEASUREMENT_ID` above. A dev server you started yourself
+        // needs it too for the cookie consent spec.
+        env: {
+          ASSISTANT_TEST_MODEL: '1',
+          GA_MEASUREMENT_ID: E2E_GA_MEASUREMENT_ID,
+          SITE_URL: baseURL,
+        },
       },
 })
