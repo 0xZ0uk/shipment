@@ -17,6 +17,20 @@ describe('withOnPageNoStore', () => {
     expect(await out.text()).toBe('<html>published</html>')
   })
 
+  it('drops the CDN-only cache headers, which Cloudflare reads before Cache-Control', () => {
+    const out = withOnPageNoStore(
+      req('/about?_onpage=1'),
+      res({
+        'Cache-Control': 'private, no-store',
+        'Cloudflare-CDN-Cache-Control': 'max-age=300, stale-while-revalidate=86400',
+        'CDN-Cache-Control': 'max-age=300',
+      }),
+    )
+    expect(out.headers.get('Cache-Control')).toBe('private, no-store')
+    expect(out.headers.has('Cloudflare-CDN-Cache-Control')).toBe(false)
+    expect(out.headers.has('CDN-Cache-Control')).toBe(false)
+  })
+
   it('makes a marked URL with other parameters private', () => {
     const out = withOnPageNoStore(req('/?draft=true&_onpage=1'), res())
     expect(out.headers.get('Cache-Control')).toBe('private, no-store')
