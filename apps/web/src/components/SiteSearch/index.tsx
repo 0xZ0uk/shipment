@@ -2,6 +2,8 @@ import { SearchIcon } from 'lucide-react'
 import React, { Suspense, useEffect, useState } from 'react'
 
 import { buttonVariants } from '@/components/ui/button'
+import { localizePath } from '@/i18n/locales'
+import { useLocale } from '@/i18n/routing'
 import { cn } from '@/utilities/ui'
 
 // The palette (cmdk, the dialog) is its own chunk, fetched when a visitor first points at,
@@ -15,6 +17,7 @@ const SearchDialog = React.lazy(loadDialog)
  * visitor; the shortcut hint appears after hydration, once the platform is known.
  */
 export const SiteSearch: React.FC = () => {
+  const locale = useLocale()
   const [open, setOpen] = useState(false)
   // Mounted once opened, then kept, so it can animate closed and reopen with the last query.
   const [mounted, setMounted] = useState(false)
@@ -43,7 +46,7 @@ export const SiteSearch: React.FC = () => {
       <a
         aria-keyshortcuts="Meta+K Control+K"
         className={cn(buttonVariants({ variant: 'outline' }), 'gap-2 text-muted-foreground')}
-        href="/search"
+        href={localizePath('/search', locale)}
         onClick={(event) => {
           if (
             event.metaKey ||

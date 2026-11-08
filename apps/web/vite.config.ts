@@ -7,7 +7,7 @@ import rsc from '@vitejs/plugin-rsc'
 import { realpathSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { defineConfig, type ConfigEnv } from 'vite'
+import { defineConfig, loadEnv, type ConfigEnv } from 'vite'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const payloadServerEntry = realpathSync(
@@ -33,11 +33,20 @@ export const copyS3File = unavailable
 const isCloudflareRuntime = (env: ConfigEnv) =>
   env.command === 'build' || process.env.CLOUDFLARE_RUNTIME === 'true'
 
+// The site's locales (src/i18n/locales.ts), compiled into every bundle so the browser's router,
+// the Worker and the Payload config read the same list. `varlock run` (dev) and the process env
+// win, then `.env.[APP_ENV]` files like varlock's; `.env.schema`'s default `en` is the module's.
+const localesFor = (env: ConfigEnv) =>
+  loadEnv(process.env.APP_ENV || env.mode, __dirname, '').LOCALES ?? ''
+
 const payloadConfig = withPayload(
   ({ env, pluginOptions }) => {
     const useCloudflareRuntime = isCloudflareRuntime(env)
 
     return {
+      define: {
+        __SHIPMENT_LOCALES__: JSON.stringify(localesFor(env)),
+      },
       plugins: [
         useCloudflareRuntime && {
           name: 'payload-cloudflare-server-entry',

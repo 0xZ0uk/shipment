@@ -39,6 +39,7 @@ export const Sections: CollectionConfig = {
       type: 'blocks',
       // Registered once in `payload.config.ts` (`blocks`), listed here by slug.
       blocks: sectionBlockSlugs,
+      localized: true,
       required: true,
       admin: { initCollapsed: true },
     },

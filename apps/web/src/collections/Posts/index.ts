@@ -12,11 +12,13 @@ import { authenticated } from '@/access/authenticated'
 import { authenticatedOrPublished } from '@/access/authenticatedOrPublished'
 import { blockRichText, mediaField } from '@/blocks/shared/fields'
 import { populatePublishedAt } from '@/hooks/populatePublishedAt'
+import { localizePath } from '@/i18n/locales'
 import { postPath, RESERVED_POST_SLUGS } from '@/utilities/postPath'
 
 // Drafts render on the frontend only for logged-in users who add `?draft=true`.
-const previewPath = (slug: unknown) =>
-  typeof slug === 'string' && slug ? `${postPath(slug)}?draft=true` : null
+// In the locale being edited, like Pages.
+const previewPath = (slug: unknown, locale?: string) =>
+  typeof slug === 'string' && slug ? `${localizePath(postPath(slug), locale)}?draft=true` : null
 
 /**
  * Blog posts, served at `/blog/<slug>` (`src/app/_frontend/blog.$slug.tsx`) and listed on the
@@ -42,15 +44,16 @@ export const Posts: CollectionConfig = {
     defaultColumns: ['title', 'slug', 'publishedAt', 'updatedAt'],
     group: 'Blog',
     livePreview: {
-      url: ({ data }) => previewPath(data?.slug),
+      url: ({ data, locale }) => previewPath(data?.slug, locale?.code),
     },
-    preview: (data) => previewPath(data?.slug),
+    preview: (data, { locale }) => previewPath(data?.slug, locale),
     useAsTitle: 'title',
   },
   fields: [
     {
       name: 'title',
       type: 'text',
+      localized: true,
       required: true,
     },
     {
@@ -61,6 +64,7 @@ export const Posts: CollectionConfig = {
             {
               name: 'excerpt',
               type: 'textarea',
+              localized: true,
               admin: {
                 description: 'A sentence or two for the archive, the feed and link previews.',
               },
@@ -70,6 +74,7 @@ export const Posts: CollectionConfig = {
               name: 'content',
               type: 'richText',
               editor: blockRichText(),
+              localized: true,
               label: false,
             },
           ],

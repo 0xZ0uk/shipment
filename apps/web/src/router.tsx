@@ -1,6 +1,8 @@
 import { createRouter } from '@tanstack/react-router'
 import { payloadParseSearch, payloadStringifySearch } from '@payloadcms/tanstack-start/shared'
 
+import { isMultilingual } from './i18n/locales'
+import { localeRewrite } from './i18n/routing'
 import { routeTree } from './routeTree.gen'
 
 function DefaultNotFound() {
@@ -16,6 +18,8 @@ export function getRouter() {
   return createRouter({
     defaultNotFoundComponent: DefaultNotFound,
     parseSearch: payloadParseSearch,
+    // `/pt/about` ↔ `/about?locale=pt` (src/i18n/routing.ts). Off with one locale.
+    rewrite: isMultilingual ? localeRewrite() : undefined,
     routeTree,
     scrollRestoration: true,
     stringifySearch: payloadStringifySearch,

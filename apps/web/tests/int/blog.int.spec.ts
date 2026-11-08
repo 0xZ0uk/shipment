@@ -200,6 +200,9 @@ describe('buildPostJsonLd', () => {
   })
 })
 
+/** The locale fields with one locale (`LOCALES` unset), as the blog loaders return them. */
+const singleLocale = { fallback: false, locale: 'en', translations: ['en'] }
+
 describe('blog heads', () => {
   it('describes a post as an article at its canonical URL', () => {
     const head = postHead({
@@ -214,6 +217,7 @@ describe('blog heads', () => {
         title: 'Hello',
       } as never,
       siteUrl: 'https://example.com',
+      ...singleLocale,
     })
     expect(head.meta).toContainEqual({ title: 'Hello | Shipment' })
     expect(head.meta).toContainEqual({ property: 'og:type', content: 'article' })
@@ -235,6 +239,7 @@ describe('blog heads', () => {
       siteUrl: 'https://example.com',
       totalDocs: 30,
       totalPages: 4,
+      ...singleLocale,
     }
     expect(archiveHead({ ...base, page: 1 }).links).toEqual([
       { rel: 'canonical', href: 'https://example.com/blog' },

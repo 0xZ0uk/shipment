@@ -219,6 +219,23 @@ export interface SeoConfig {
   excludeDocs?: SeoExcludeDocs
   /** Dotted field paths `excludeDocs` reads (e.g. `['_abVariantOf']`). */
   excludeDocsFields?: string[]
+  /**
+   * The site's locales, for sitemap.xml's hreflang alternates. With two or more, every document
+   * is listed once per locale it is published in (Payload keeps `_status` per locale), each
+   * `<url>` with `xhtml:link` alternates for its translations and `x-default` on the default
+   * locale's URL. Unset or one locale: one `<url>` per document, no alternates.
+   */
+  localization?: SeoLocalization
+}
+
+/** See `SeoConfig.localization`. */
+export interface SeoLocalization {
+  locales: readonly string[]
+  defaultLocale: string
+  /** A document's public path (as `collectionRoutes` builds it) in `locale`, e.g. `/pt/about`. */
+  localizePath: (path: string, locale: string) => string
+  /** The `hreflang` value of a locale (default: its code). */
+  hreflang?: (locale: string) => string
 }
 
 /** See `SeoConfig.excludeDocs`. */

@@ -5,7 +5,7 @@
  */
 
 import type { PayloadHandler } from 'payload'
-import type { SeoConfig } from '../types.js'
+import type { SeoConfig, SeoLocalization } from '../types.js'
 import { buildDocPath } from '../helpers/docUrl.js'
 import { requestOrigin, resolveSiteUrl } from '../helpers/siteUrl.js'
 import { buildSelect } from '../helpers/buildSelect.js'
@@ -85,6 +85,28 @@ interface SitemapUrl {
   lastmod?: string
   changefreq?: string
   priority?: string
+  /** hreflang alternates (`xhtml:link`), the URL itself included. */
+  alternates?: Array<{ hreflang: string; href: string }>
+}
+
+/** `localization` when it has a second locale, else undefined (the single-locale sitemap). */
+const multilingual = (seoConfig?: SeoConfig): SeoLocalization | undefined =>
+  seoConfig?.localization && seoConfig.localization.locales.length > 1
+    ? seoConfig.localization
+    : undefined
+
+/**
+ * The locales a document read with `locale: 'all'` is published in. `_status` is a locale map
+ * when the collection keeps it per locale; a plain value (or none: no drafts) is the default
+ * locale's alone.
+ */
+export function publishedLocales(doc: { _status?: unknown }, localization: SeoLocalization): string[] {
+  const status = doc._status
+  if (status && typeof status === 'object') {
+    const byLocale = status as Record<string, unknown>
+    return localization.locales.filter((locale) => byLocale[locale] === 'published')
+  }
+  return status === 'draft' ? [] : [localization.defaultLocale]
 }
 
 /**
@@ -122,9 +144,15 @@ export function createSitemapHandler(
       // The collections and the origin (request-derived: uppercase host, IPv6 literal, query
       // string…) are inputs of the key. Persisted entries outlive deploys: the key also carries
       // the config that shapes the XML (`collectionRoutes` builds every `<loc>`).
+      const localization = multilingual(seoConfig)
       const cacheKey = await keyFor(SITEMAP_XML_CACHE_BASE, req, {
         cache,
-        inputs: [targetCollections, serverUrl],
+        // The locales shape the XML too (and `localizePath`, a function, isn't in the config hash).
+        inputs: [
+          targetCollections,
+          serverUrl,
+          localization ? [localization.defaultLocale, ...localization.locales] : null,
+        ],
         config: seoConfig ?? null,
       })
       const lookup = await safeLookup<string>(cache, SITEMAP_XML_CACHE_BASE, cacheKey, req)
@@ -154,17 +182,22 @@ export function createSitemapHandler(
         // Only what the loop below reads — never the layout blocks / Lexical trees.
         select: buildSelect(req.payload, targetCollections, SITEMAP_SELECT_PATHS),
         exclude: docExclusion(seoConfig),
+        // Every locale's `_status`, to list each document once per locale it is published in.
+        ...(localization ? { locale: 'all' } : {}),
       })
 
       const urls: SitemapUrl[] = []
 
       for (const { doc: rawDoc, sourceSlug: collectionSlug } of allDocs) {
         const doc = rawDoc as SitemapDoc
+        const locales = localization ? publishedLocales(doc, localization) : []
+        if (localization && locales.length === 0) continue
         // Skip drafts and documents the editor explicitly removed from indexing. sitemap.xml is a
         // PUBLIC, anonymous endpoint built with overrideAccess: true — without this filter
         // it published the URLs of noindex pages (post-purchase thank-you, private pricing,
         // test landing pages) and contradicted /llms.txt, which already honours the flag.
-        if (!isListedDoc(doc)) continue
+        // (Read in every locale, `_status` is a map: `publishedLocales` checked it above.)
+        if (!isListedDoc(localization ? { ...doc, _status: 'published' } : doc)) continue
 
         const slug: string = doc.slug || ''
 
@@ -204,22 +237,46 @@ export function createSitemapHandler(
           }
         }
 
-        urls.push({
-          loc: `${serverUrl}${path}`,
+        const entry = {
           lastmod: doc.updatedAt
             ? new Date(doc.updatedAt).toISOString().split('T')[0]
             : undefined,
           changefreq,
           priority: priority.toFixed(1),
-        })
+        }
+
+        if (!localization) {
+          urls.push({ loc: `${serverUrl}${path}`, ...entry })
+          continue
+        }
+
+        // One `<url>` per published locale, each listing the whole set (itself included), plus
+        // `x-default` on the default locale's URL. A document in one locale has no alternates.
+        const hreflang = localization.hreflang ?? ((locale: string) => locale)
+        const hrefOf = (locale: string) => `${serverUrl}${localization.localizePath(path, locale)}`
+        const alternates =
+          locales.length > 1
+            ? [
+                ...locales.map((locale) => ({ hreflang: hreflang(locale), href: hrefOf(locale) })),
+                ...(locales.includes(localization.defaultLocale)
+                  ? [{ hreflang: 'x-default', href: hrefOf(localization.defaultLocale) }]
+                  : []),
+              ]
+            : undefined
+        for (const locale of locales) urls.push({ loc: hrefOf(locale), ...entry, alternates })
       }
 
       // Build XML
       let xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
-      xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+      xml += localization
+        ? '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n'
+        : '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
       for (const url of urls) {
         xml += '  <url>\n'
         xml += `    <loc>${escapeXml(url.loc)}</loc>\n`
+        for (const alternate of url.alternates ?? []) {
+          xml += `    <xhtml:link rel="alternate" hreflang="${escapeXml(alternate.hreflang)}" href="${escapeXml(alternate.href)}"/>\n`
+        }
         if (url.lastmod) xml += `    <lastmod>${url.lastmod}</lastmod>\n`
         if (url.changefreq) xml += `    <changefreq>${url.changefreq}</changefreq>\n`
         if (url.priority) xml += `    <priority>${url.priority}</priority>\n`

@@ -100,6 +100,9 @@ describe('buildPageJsonLd', () => {
   })
 })
 
+/** A page's locale fields with one locale (`LOCALES` unset), as `loadPage` returns them. */
+const singleLocale = { fallback: false, locale: 'en', translations: ['en'] }
+
 describe('pageHead', () => {
   it('turns the serialized nodes into ld+json scripts', () => {
     const head = pageHead({
@@ -110,6 +113,7 @@ describe('pageHead', () => {
       page: { layout: [], slug: 'about', title: 'About' } as never,
       canonicalSlug: 'about',
       siteUrl: 'https://example.com',
+      ...singleLocale,
     })
 
     expect(head).toHaveProperty('scripts', [
@@ -128,6 +132,7 @@ describe('pageHead', () => {
         page: { layout: [], noindex, slug: 'thank-you', title: 'Thank you' } as never,
         canonicalSlug: 'thank-you',
         siteUrl: 'https://example.com',
+        ...singleLocale,
       }).meta
 
     expect(head(true)).toContainEqual({ name: 'robots', content: 'noindex' })
@@ -145,6 +150,7 @@ describe('pageHead', () => {
       // An A/B variant served at the original's URL.
       page: { layout: [], slug: 'about--4ji9qa', title: 'About' } as never,
       siteUrl: 'https://example.com',
+      ...singleLocale,
     })
 
     expect(head).toHaveProperty('links', [{ rel: 'canonical', href: 'https://example.com/about' }])
@@ -161,6 +167,7 @@ describe('pageHead', () => {
       origin: 'https://example.com',
       page: { layout: [], slug: 'home', title: 'Home' } as never,
       siteUrl: 'https://example.com',
+      ...singleLocale,
     })
 
     expect(head).toHaveProperty('links', [{ rel: 'canonical', href: 'https://example.com/' }])

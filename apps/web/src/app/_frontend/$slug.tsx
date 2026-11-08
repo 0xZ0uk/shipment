@@ -2,7 +2,9 @@ import { createFileRoute, notFound, redirect } from '@tanstack/react-router'
 
 import { preloadBlocks } from '@/blocks/components'
 import { NotFound } from '@/components/NotFound'
+import { publicSearchStr } from '@/i18n/routing'
 import { PageTemplate } from '@/components/PageTemplate'
+import { ContentLanguage } from '@/i18n/ContentLanguage'
 import { pageHead } from '@/utilities/pageHead'
 import { validateDraftSearch } from '@/utilities/validateDraftSearch'
 
@@ -17,19 +19,23 @@ export const Route = createFileRoute('/_frontend/$slug')({
       throw redirect({ search, statusCode: 301, to: '/' })
     }
   },
-  loaderDeps: ({ search }) => ({ draft: search.draft }),
+  loaderDeps: ({ search }) => ({ draft: search.draft, locale: search.locale }),
   loader: async ({ deps, location, params }) => {
-    const data = await loadPage({ data: { draft: deps.draft, slug: params.slug } })
+    const data = await loadPage({
+      data: { draft: deps.draft, locale: deps.locale, slug: params.slug },
+    })
+    // What the visitor sent, without the router's internal `locale` param (src/i18n/routing.ts).
+    const search = publicSearchStr(location.searchStr)
 
     // A published A/B variant asked for by its own URL: send the visitor to the original's.
     if (data.redirectTo) {
-      throw redirect({ href: `${data.redirectTo}${location.searchStr}`, statusCode: 302 })
+      throw redirect({ href: `${data.redirectTo}${search}`, statusCode: 302 })
     }
 
     if (!data.page) {
       // Only a miss pays for the redirect lookup, so existing pages never touch it.
       const target = await resolveRedirect({
-        data: { pathname: location.pathname, search: location.searchStr },
+        data: { locale: deps.locale, pathname: location.pathname, search },
       })
 
       if (target) {
@@ -51,17 +57,19 @@ export const Route = createFileRoute('/_frontend/$slug')({
 })
 
 function SlugPage() {
-  const { draft, experiment, gaMeasurementId, livePreview, page, postsArchive } =
+  const { draft, experiment, fallback, gaMeasurementId, livePreview, page, postsArchive } =
     Route.useLoaderData()
 
   return page ? (
-    <PageTemplate
-      draft={draft}
-      experiment={experiment}
-      gaMeasurementId={gaMeasurementId}
-      livePreview={livePreview}
-      page={page}
-      postsArchive={postsArchive}
-    />
+    <ContentLanguage fallback={fallback}>
+      <PageTemplate
+        draft={draft}
+        experiment={experiment}
+        gaMeasurementId={gaMeasurementId}
+        livePreview={livePreview}
+        page={page}
+        postsArchive={postsArchive}
+      />
+    </ContentLanguage>
   ) : null
 }

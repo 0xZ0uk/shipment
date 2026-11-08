@@ -3,7 +3,9 @@ import React from 'react'
 
 import type { Header as HeaderType } from '@/payload-types'
 
+import { LocaleSwitcher } from '@/components/LocaleSwitcher'
 import { Logo } from '@/components/Logo/Logo'
+import { isMultilingual } from '@/i18n/locales'
 import { SiteSearch } from '@/components/SiteSearch'
 import { siteName } from '@/utilities/siteName'
 import { HeaderNav } from './Nav'
@@ -13,8 +15,9 @@ interface HeaderProps {
 }
 
 /**
- * Sticky, translucent bar: the logo, site search and the navigation links from the Header
- * global. The page's `scroll-padding-block-start` (styles.css) keeps anchor targets clear of it.
+ * Sticky, translucent bar: the logo, site search, the language menu (with two or more locales)
+ * and the navigation links from the Header global. The page's `scroll-padding-block-start`
+ * (styles.css) keeps anchor targets clear of it.
  */
 export const Header: React.FC<HeaderProps> = ({ data }) => {
   return (
@@ -29,7 +32,15 @@ export const Header: React.FC<HeaderProps> = ({ data }) => {
         </Link>
         <div className="flex items-center gap-2 md:gap-8">
           <SiteSearch />
-          <HeaderNav data={data} />
+          {/* With one locale, exactly the markup (and React ids) of before localization. */}
+          {isMultilingual ? (
+            <>
+              <LocaleSwitcher />
+              <HeaderNav data={data} />
+            </>
+          ) : (
+            <HeaderNav data={data} />
+          )}
         </div>
       </div>
     </header>

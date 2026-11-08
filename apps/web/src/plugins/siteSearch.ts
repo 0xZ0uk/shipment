@@ -10,8 +10,10 @@ import type {
 
 import { isListedDoc, searchTextFromDoc } from '@shipment/payload-seo-analyzer'
 
+import { defaultLocale, isMultilingual, type Locale, locales, localizePath } from '@/i18n/locales'
+import { readLocale, requestLocale, translatedLocales } from '@/i18n/server'
 import { MAX_QUERY_LENGTH } from '@/search/matchQuery'
-import type { SearchEntry, SearchIndex } from '@/search/searchIndex'
+import { indexLocale, type SearchEntry, type SearchIndex } from '@/search/searchIndex'
 import type { SearchResponse } from '@/search/types'
 
 import { isRestDraftSave } from './edgeCachePurge'
@@ -49,6 +51,10 @@ export type SiteSearchOptions = {
  * `isListedDoc`) and not excluded by its collection (A/B variants), with its title, meta
  * description and the analyzer's plain text of its blocks (`searchTextFromDoc`).
  *
+ * With several locales (#158), once per locale it is published in: the default locale's row as
+ * before, and a row per translation, read in that locale (fields it leaves empty fall back to the
+ * default locale's) at its prefixed path. A visitor searches their own locale's rows.
+ *
  * Saves never wait on or fail because of the index: the hooks re-read the published document
  * and write the index in the background (`waitUntil`), logging failures. Autosaves and other
  * REST draft saves are skipped: they change nothing visitors see. A change to a document they
@@ -78,18 +84,63 @@ const optionsOf = (payload: Payload): SiteSearchOptions => {
   return options
 }
 
-/** The index row for a document as read, or null when it must not be searchable. */
+/**
+ * The index row for a document as read (in `locale`, the default locale's by default), or null
+ * when it must not be searchable.
+ */
 export function searchEntryFor(
   payload: Payload,
   collection: string,
   doc: Doc | null | undefined,
   options: SearchCollectionOptions,
+  locale: Locale = defaultLocale,
 ): SearchEntry | null {
   if (!doc || !isListedDoc(doc) || options.exclude?.(doc)) return null
   const path = options.path(doc)
   if (!path) return null
   const text = searchTextFromDoc(doc, collection, { extractors: payload })
-  return { collection, id: doc.id as number | string, path, ...text }
+  const id = doc.id as number | string
+  if (locale === defaultLocale) return { collection, id, path, ...text }
+  return {
+    collection,
+    id,
+    locale: indexLocale(locale, defaultLocale),
+    path: localizePath(path, locale),
+    ...text,
+  }
+}
+
+/**
+ * A document's rows in the locales other than the default (#158): one per locale it is published
+ * in (`translatedLocales`), read in it; the others' rows go. Nothing with one locale.
+ */
+async function syncTranslations(
+  payload: Payload,
+  collection: string,
+  id: number | string,
+  options: SearchCollectionOptions,
+): Promise<void> {
+  if (!isMultilingual) return
+  const { index } = optionsOf(payload)
+  const live = await translatedLocales(payload, collection as 'pages', id)
+  for (const locale of locales) {
+    if (locale === defaultLocale) continue
+    const key = indexLocale(locale, defaultLocale)
+    const doc = live.includes(locale)
+      ? await payload.findByID({
+          collection: collection as never,
+          id,
+          depth: 1,
+          draft: false,
+          overrideAccess: true,
+          disableErrors: true,
+          ...readLocale(locale),
+        })
+      : null
+    const entry = searchEntryFor(payload, collection, doc as Doc | null, options, locale)
+    if (entry) await index.upsert(entry)
+    else await index.remove(collection, id, key)
+  }
 }
 
 /**
@@ -114,6 +165,8 @@ export async function syncSearchDoc(
   const entry = searchEntryFor(payload, collection, doc as Doc | null, collections[collection]!)
   if (entry) await index.upsert(entry)
   else await index.remove(collection, id)
+  // After the default locale's: removing that row removes the document's every row.
+  await syncTranslations(payload, collection, id, collections[collection]!)
 }
 
 export type ReindexResult = Record<string, { indexed: number; removed: number }>
@@ -163,6 +216,7 @@ export async function reindexSearchBatch(
       await index.remove(collection, doc.id as number | string)
       removed++
     }
+    await syncTranslations(payload, collection, doc.id as number | string, options)
   }
   if (!batch.hasNextPage) removed += await removeMissing(payload, collection, [...rows])
 
@@ -313,7 +367,8 @@ const json = (body: unknown, status = 200, headers?: HeadersInit) =>
   Response.json(body, { status, headers })
 
 /**
- * `GET /api/search?q=<query>&limit=<n>`: the best matches, `SearchResponse`. Public, rate
+ * `GET /api/search?q=<query>&limit=<n>&locale=<code>`: the best matches in a locale (the default
+ * without, or for an unknown code), `SearchResponse`. Public, rate
  * limited per client IP, and private like every response that doesn't opt in (the answer
  * depends on the query string only, but nothing gains from caching it at the edge).
  */
@@ -332,6 +387,7 @@ const searchEndpoint = (options: SiteSearchOptions): Endpoint => ({
     try {
       const results = await options.index.search(query, {
         limit: Number(params.get('limit')) || undefined,
+        locale: indexLocale(requestLocale(params.get('locale')), defaultLocale),
       })
       return json({ query, results } satisfies SearchResponse)
     } catch (error) {

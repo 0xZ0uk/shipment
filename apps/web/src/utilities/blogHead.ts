@@ -1,5 +1,8 @@
 import type { LoadArchiveResult, LoadPostResult } from '@/app/_frontend/blog.functions'
 
+import { localeHead } from '@/i18n/head'
+import { defaultLocale, localizePath } from '@/i18n/locales'
+
 import { absoluteMediaURL, type HeadResult, headTags } from './pageHead'
 import { archivePagePath, postPath } from './postPath'
 import { siteName } from './siteName'
@@ -10,20 +13,29 @@ export const postHead = (data?: LoadPostResult): HeadResult => {
   if (!data || !post) return { meta: [{ title: siteName }] }
 
   const published = post.publishedAt || undefined
+  const locale = localeHead({
+    fallback: data.fallback,
+    locale: data.locale ?? defaultLocale,
+    path: postPath(post.slug),
+    siteUrl: data.siteUrl,
+    translations: data.translations ?? [defaultLocale],
+  })
   return headTags({
     description: post.meta?.description || post.excerpt,
     gaMeasurementId: data.gaMeasurementId,
     imageURL:
       absoluteMediaURL(data.siteUrl, post.meta?.image) ?? absoluteMediaURL(data.siteUrl, post.cover),
     jsonLd: data.jsonLd,
+    links: locale.links,
     meta: [
+      ...locale.meta,
       ...(published ? [{ property: 'article:published_time', content: published }] : []),
       ...(post.updatedAt ? [{ property: 'article:modified_time', content: post.updatedAt }] : []),
     ],
-    noindex: post.noindex,
+    noindex: post.noindex || locale.noindex,
     ogType: 'article',
     title: post.meta?.title || `${post.title} | ${siteName}`,
-    url: `${data.siteUrl}${postPath(post.slug)}`,
+    url: locale.url,
   })
 }
 
@@ -38,7 +50,14 @@ export const archiveTitle = (category: { title: string } | null, page: number) =
 export const archiveHead = (data?: LoadArchiveResult): HeadResult => {
   if (!data?.found) return { meta: [{ title: siteName }] }
 
-  const url = (page: number) => `${data.siteUrl}${archivePagePath(data.basePath, page)}`
+  const url = (page: number) =>
+    `${data.siteUrl}${localizePath(archivePagePath(data.basePath, page), data.locale)}`
+  const locale = localeHead({
+    locale: data.locale ?? defaultLocale,
+    path: archivePagePath(data.basePath, data.page),
+    siteUrl: data.siteUrl,
+    translations: data.translations ?? [defaultLocale],
+  })
   return headTags({
     description:
       data.category?.description ||
@@ -47,10 +66,12 @@ export const archiveHead = (data?: LoadArchiveResult): HeadResult => {
         : `The latest posts from ${siteName}.`),
     gaMeasurementId: data.gaMeasurementId,
     links: [
+      ...locale.links,
       ...(data.page > 1 ? [{ rel: 'prev', href: url(data.page - 1) }] : []),
       ...(data.page < data.totalPages ? [{ rel: 'next', href: url(data.page + 1) }] : []),
     ],
+    meta: locale.meta,
     title: `${archiveTitle(data.category, data.page)} | ${siteName}`,
-    url: url(data.page),
+    url: locale.url,
   })
 }
