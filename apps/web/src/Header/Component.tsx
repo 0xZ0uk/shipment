@@ -4,6 +4,7 @@ import React from 'react'
 import type { Header as HeaderType } from '@/payload-types'
 
 import { Logo } from '@/components/Logo/Logo'
+import { SiteSearch } from '@/components/SiteSearch'
 import { siteName } from '@/utilities/siteName'
 import { HeaderNav } from './Nav'
 
@@ -12,8 +13,8 @@ interface HeaderProps {
 }
 
 /**
- * Sticky, translucent bar: the logo and the navigation links from the Header global. The
- * page's `scroll-padding-block-start` (styles.css) keeps anchor targets clear of it.
+ * Sticky, translucent bar: the logo, site search and the navigation links from the Header
+ * global. The page's `scroll-padding-block-start` (styles.css) keeps anchor targets clear of it.
  */
 export const Header: React.FC<HeaderProps> = ({ data }) => {
   return (
@@ -26,7 +27,10 @@ export const Header: React.FC<HeaderProps> = ({ data }) => {
         >
           <Logo />
         </Link>
-        <HeaderNav data={data} />
+        <div className="flex items-center gap-2 md:gap-8">
+          <SiteSearch />
+          <HeaderNav data={data} />
+        </div>
       </div>
     </header>
   )

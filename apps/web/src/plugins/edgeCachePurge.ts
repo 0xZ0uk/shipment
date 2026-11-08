@@ -117,7 +117,7 @@ export function pageChangeTags(before: PublicPageState, after: PublicPageState):
  * `_status: 'draft'` without it. A local API call doesn't show its `draft` argument to hooks, so
  * it gets the extra read below.
  */
-const isRestDraftSave = (req: PayloadRequest, data: Record<string, unknown>) => {
+export const isRestDraftSave = (req: PayloadRequest, data: Record<string, unknown>) => {
   const draft = (req.query as Record<string, unknown> | undefined)?.draft
   return data._status !== 'published' && (draft === 'true' || draft === true)
 }
