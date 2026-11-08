@@ -37,6 +37,7 @@ export const blockLoaders: BlockLoaders = {
   logos: () => import('./Logos/Component').then((m) => m.LogosBlock),
   stats: () => import('./Stats/Component').then((m) => m.StatsBlock),
   cta: () => import('./Cta/Component').then((m) => m.CtaBlock),
+  form: () => import('./Form/Component').then((m) => m.FormBlock),
   pricing: () => import('./Pricing/Component').then((m) => m.PricingBlock),
   mediaBlock: () => import('./MediaBlock/Component').then((m) => m.MediaBlock),
   gallery: () => import('./Gallery/Component').then((m) => m.GalleryBlock),

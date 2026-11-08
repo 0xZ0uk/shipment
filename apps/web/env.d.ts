@@ -325,13 +325,58 @@ export type CoercedEnvSchema = {
    */
   GA_MEASUREMENT_ID?: string;
   
+  /**
+   * **TURNSTILE_SITE_KEY**  
+   * Contact and newsletter forms (the Form block, src/forms). Submissions and signups go to the  
+   * separate FORMS_D1 database (wrangler.jsonc), never the main one.  
+   *   
+   * Cloudflare Turnstile keys (Cloudflare dashboard > Turnstile > Add widget, with the site's  
+   * hostnames). The site key ships in the page; the secret verifies tokens server-side  
+   * (Siteverify). Development falls back to Cloudflare's always-pass test pair when both are  
+   * empty. On a deployed Worker without both, the forms refuse submissions (503) and visitors see  
+   * "This form isn't available right now" instead of fields they can't send.  
+   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M29%2022h-5a2.003%202.003%200%200%201-2-2v-6a2%202%200%200%201%202-2h5v2h-5v6h5ZM18%2012h-4V8h-2v14h6a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-4%208v-6h4v6Zm-6-8H3v2h5v2H4a2%202%200%200%200-2%202v2a2%202%200%200%200%202%202h6v-8a2%202%200%200%200-2-2m0%208H4v-2h4Z%22%2F%3E%3C%2Fsvg%3E)   
+   */
+  TURNSTILE_SITE_KEY?: string;
+  
+  /**
+   * **TURNSTILE_SECRET_KEY** 🔐 _sensitive_  
+   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M29%2022h-5a2.003%202.003%200%200%201-2-2v-6a2%202%200%200%201%202-2h5v2h-5v6h5ZM18%2012h-4V8h-2v14h6a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-4%208v-6h4v6Zm-6-8H3v2h5v2H4a2%202%200%200%200-2%202v2a2%202%200%200%200%202%202h6v-8a2%202%200%200%200-2-2m0%208H4v-2h4Z%22%2F%3E%3C%2Fsvg%3E)   
+   */
+  TURNSTILE_SECRET_KEY?: string;
+  
+  /**
+   * **FORMS_NOTIFY_EMAIL** 🔐 _sensitive_  
+   * Comma-separated addresses that get an email for each contact submission and newsletter  
+   * signup. Needs an email transport (see "Email" above); with Payload's console fallback the  
+   * email is logged. Empty: nothing is sent (submissions are still stored).  
+   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M29%2022h-5a2.003%202.003%200%200%201-2-2v-6a2%202%200%200%201%202-2h5v2h-5v6h5ZM18%2012h-4V8h-2v14h6a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-4%208v-6h4v6Zm-6-8H3v2h5v2H4a2%202%200%200%200-2%202v2a2%202%200%200%200%202%202h6v-8a2%202%200%200%200-2-2m0%208H4v-2h4Z%22%2F%3E%3C%2Fsvg%3E)   
+   */
+  FORMS_NOTIFY_EMAIL?: string;
+  
+  /**
+   * **FORMS_AUTORESPONDER**  
+   * Set to 1 to send the sender of a contact form a short "we got your message" email. Off by  
+   * default: it emails an address anyone can type in.  
+   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M7.885%2010.23L12%203.463l4.116%206.769zm9.606%2011q-1.558%200-2.64-1.081t-1.082-2.64t1.082-2.649t2.64-1.09t2.649%201.09t1.09%202.649t-1.09%202.64t-2.649%201.082m-13.722-.5v-6.462h6.462v6.462z%22%2F%3E%3C%2Fsvg%3E)   
+   */
+  FORMS_AUTORESPONDER?: 0 | 1;
+  
+  /**
+   * **FORMS_RETENTION_DAYS**  
+   * Contact submissions older than this many days are deleted by the Cron Trigger (default 90).  
+   * Newsletter signups are kept until the person unsubscribes.  
+   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M26%2012h-4v2h4v2h-3v2h3v2h-4v2h4a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-7%2010h-6v-4a2%202%200%200%201%202-2h2v-2h-4v-2h4a2%202%200%200%201%202%202v2a2%202%200%200%201-2%202h-2v2h4ZM8%2020v-8H6v1H4v2h2v5H4v2h6v-2z%22%2F%3E%3C%2Fsvg%3E)   
+   */
+  FORMS_RETENTION_DAYS?: number;
+  
 };
 
-type _CoercedEnvSchema_fc84615c = CoercedEnvSchema;
+type _CoercedEnvSchema_179d473f = CoercedEnvSchema;
 
 declare module 'varlock/env' {
-  export interface TypedEnvSchema extends Readonly<_CoercedEnvSchema_fc84615c> {}
-  export interface PublicTypedEnvSchema extends Readonly<Pick<_CoercedEnvSchema_fc84615c, 'APP_ENV' | 'PAYLOAD_LOG_LEVEL' | 'SITE_URL' | 'SEO_LLMS_TXT' | 'SEO_AUDIT_MAX_DOCS' | 'SEO_AUDIT_STEP_DOCS' | 'SEO_FETCH_MAX_DOCS' | 'GSC_OAUTH_CLIENT_ID' | 'SEO_AI_MODEL' | 'SEO_AI_BASE_URL' | 'SEO_AI_REASONING' | 'SEO_AI_DATA_COLLECTION' | 'SEO_EXTERNAL_LINKS_MAX' | 'SEO_EXTERNAL_LINKS_MAX_SUBREQUESTS' | 'SEO_ALERT_WEBHOOK_FORMAT' | 'EMAIL_FROM_ADDRESS' | 'EMAIL_FROM_NAME' | 'SEO_ALERT_SCORE_DROP' | 'SEO_ALERT_POSITION_DROP' | 'SEO_ALERT_WINDOW_HOURS' | 'ASSISTANT_TEST_MODEL' | 'PINTEREST_APP_ID' | 'AB_ANALYTICS_ACCOUNT_ID' | 'GA_MEASUREMENT_ID'>> {}
+  export interface TypedEnvSchema extends Readonly<_CoercedEnvSchema_179d473f> {}
+  export interface PublicTypedEnvSchema extends Readonly<Pick<_CoercedEnvSchema_179d473f, 'APP_ENV' | 'PAYLOAD_LOG_LEVEL' | 'SITE_URL' | 'SEO_LLMS_TXT' | 'SEO_AUDIT_MAX_DOCS' | 'SEO_AUDIT_STEP_DOCS' | 'SEO_FETCH_MAX_DOCS' | 'GSC_OAUTH_CLIENT_ID' | 'SEO_AI_MODEL' | 'SEO_AI_BASE_URL' | 'SEO_AI_REASONING' | 'SEO_AI_DATA_COLLECTION' | 'SEO_EXTERNAL_LINKS_MAX' | 'SEO_EXTERNAL_LINKS_MAX_SUBREQUESTS' | 'SEO_ALERT_WEBHOOK_FORMAT' | 'EMAIL_FROM_ADDRESS' | 'EMAIL_FROM_NAME' | 'SEO_ALERT_SCORE_DROP' | 'SEO_ALERT_POSITION_DROP' | 'SEO_ALERT_WINDOW_HOURS' | 'ASSISTANT_TEST_MODEL' | 'PINTEREST_APP_ID' | 'AB_ANALYTICS_ACCOUNT_ID' | 'GA_MEASUREMENT_ID' | 'TURNSTILE_SITE_KEY' | 'FORMS_AUTORESPONDER' | 'FORMS_RETENTION_DAYS'>> {}
 }
 
 
@@ -341,11 +386,11 @@ export type EnvSchemaAsStrings = {
       : (NonNullable<CoercedEnvSchema[Property]> extends boolean ? ('true' | 'false') : string)
 };
 
-type _EnvSchemaAsStrings_fc84615c = EnvSchemaAsStrings;
+type _EnvSchemaAsStrings_179d473f = EnvSchemaAsStrings;
 declare global {
 
   // add types for global import.meta.env
-  interface ImportMetaEnv extends _EnvSchemaAsStrings_fc84615c {}
+  interface ImportMetaEnv extends _EnvSchemaAsStrings_179d473f {}
   interface ImportMeta {
     readonly env: ImportMetaEnv;
   }

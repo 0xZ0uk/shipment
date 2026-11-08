@@ -103,7 +103,7 @@ Keep that `PAYLOAD_SECRET` for later deploys (a new one logs everyone out and in
 pnpm run deploy:staging
 ```
 
-It runs `migrate:staging` and `seo-store:migrate:staging` (the Payload CLI and the SEO store against the staging D1s, through `CLOUDFLARE_ENV=staging`), `PRAGMA optimize`, then builds with `APP_ENV=staging CLOUDFLARE_ENV=staging` and deploys with `varlock-wrangler deploy`. The Cloudflare Vite plugin writes the staging environment, flattened, into `dist/server/wrangler.json`, which `wrangler deploy` picks up, so the deploy step takes no `--env`. The first deploy creates the Durable Object namespaces. Open `/admin` on the printed URL to create the first user. Staging runs no scheduled jobs: `env.staging` sets `triggers.crons` to `[]` (an environment inherits `triggers`), and the deploy clears the Worker's schedule (#116). To try a scheduled job there, put the cron back for that deploy, or open `/cdn-cgi/handler/scheduled` against `pnpm preview` locally.
+It runs `migrate:staging`, `seo-store:migrate:staging` and `forms-store:migrate:staging` (the Payload CLI, the SEO store and the forms store against the staging D1s, through `CLOUDFLARE_ENV=staging`), `PRAGMA optimize`, then builds with `APP_ENV=staging CLOUDFLARE_ENV=staging` and deploys with `varlock-wrangler deploy`. The Cloudflare Vite plugin writes the staging environment, flattened, into `dist/server/wrangler.json`, which `wrangler deploy` picks up, so the deploy step takes no `--env`. The first deploy creates the Durable Object namespaces. Open `/admin` on the printed URL to create the first user. Staging runs no scheduled jobs: `env.staging` sets `triggers.crons` to `[]` (an environment inherits `triggers`), and the deploy clears the Worker's schedule (#116). To try a scheduled job there, put the cron back for that deploy, or open `/cdn-cgi/handler/scheduled` against `pnpm preview` locally.
 
 To remove staging, delete the Worker (which deletes its Durable Objects) and the resources: `pnpm wrangler delete --name shipment-staging`, `pnpm wrangler d1 delete shipment-staging`, `pnpm wrangler d1 delete shipment-seo-staging`, then empty and delete the bucket (`pnpm wrangler r2 bucket delete shipment-media-staging`).
 
@@ -121,7 +121,7 @@ When you add features that produce append-only data, keep it out of the main D1 
 | Data                                     | Where it should go                         |
 | ---------------------------------------- | ------------------------------------------ |
 | Analytics, page views, events            | Workers Analytics Engine                   |
-| Form submissions                         | A separate D1 database, or R2 for archives |
+| Form submissions                         | A separate D1 database (`FORMS_D1`, see [Forms](#forms)), or R2 for archives |
 | Audit/activity logs, exports, large JSON | R2 (or Workers Logs for operational logs)  |
 
 Short-lived, event-shaped audit trails can go to Analytics Engine too (the assistant's write log does, see [Assistant](#assistant)); its data is kept 3 months, so archive to R2 what must last longer.
@@ -287,6 +287,23 @@ Under `pnpm dev`, Wrangler's proxy simulates a declared binding: it logs the ema
 **Resend setup.** Verify the domain in Resend, then create an API key with sending access to it. Set `RESEND_API_KEY` (it's `@sensitive`, so it's uploaded as a Worker secret) and `EMAIL_FROM_ADDRESS` in `.env.production.local` and `.env.staging.local`, or in CI. Leave the `EMAIL` binding out: when the binding is declared, it wins over Resend.
 
 The Cloudflare adapter maps Payload's Nodemailer-style message (`from`, `to`, `cc`, `bcc`, `replyTo`, `subject`, `html`, `text`) to the binding's `send()`. Attachments aren't supported yet and throw. `tests/int/email.int.spec.ts` covers both transports with a fake binding and a stubbed `fetch`. `tests/int/api.int.spec.ts` checks that the app falls back to the console adapter.
+
+### Forms
+
+The **Form** block (`src/blocks/Form`) renders one of two fixed forms: **contact** (name, email, message) or **newsletter** (email, plus an optional consent checkbox). Editors set the copy (heading, labels, placeholders, button, success message) and a variant (stacked, split with media, inline). Posts go to `POST /api/forms/:form` ([`src/plugins/forms.ts`](./src/plugins/forms.ts), logic in [`src/forms`](./src/forms)). That endpoint checks, in order: the `FORMS_RATE_LIMIT` rate limit (per IP), the body and a honeypot field, then Cloudflare Turnstile (Siteverify). It then stores the post and emails `FORMS_NOTIFY_EMAIL` through `payload.sendEmail` (see [Email](#email)). A failed email never loses a post. `FORMS_AUTORESPONDER=1` also emails the person who wrote in. Admins see contact messages and signups in **Forms > Submissions** (`/admin/forms`), and can export each list as CSV.
+
+- **Storage.** Posts go to their own D1 database, `FORMS_D1`, never the main one: `submissions` for contact messages and `newsletter_signups` (one row per address). Each row keeps an HMAC of the visitor's IP, not the IP itself. A signup also keeps the consent text the visitor ticked, the page and the time, plus a token for a future unsubscribe link. The store creates its tables on first use. `pnpm forms-store:migrate` (local, and in CI) and `forms-store:migrate:remote` / `:staging` (part of `pnpm run deploy`) apply them ahead of time.
+- **Retention.** The Cron Trigger deletes contact messages older than `FORMS_RETENTION_DAYS` (default 90). Newsletter signups are kept. Staging has no cron, so nothing is purged there.
+- **Newsletter.** v1 only stores signups. To send them to a mailing-list provider, fill in `forwardSignup` (`src/forms/forwardSignup.ts`), which is a no-op today.
+- **Turnstile.** Create a widget for the site's hostnames (dashboard > Turnstile), then set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` (the secret is `@sensitive`). With neither set, development uses Cloudflare's always-pass [test keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/), so `pnpm dev` and the e2e tests need nothing. A deployed Worker without both keys refuses every post (`503 not_configured`), and the block shows "This form isn't available right now" in place of the fields. It never accepts an unverified post.
+- **Caching.** The page HTML is the same for everyone, so pages with a form stay edge-cacheable. The block fetches the site key from `GET /api/forms/config` and loads Cloudflare's script in the browser.
+
+Before the first deploy, create the databases and put their ids in `wrangler.jsonc`. The ids there are placeholders (`FORMS_D1_*_ID_TODO`).
+
+```bash
+pnpm wrangler d1 create shipment-forms
+pnpm wrangler d1 create shipment-forms-staging
+```
 
 ### Current limitations
 

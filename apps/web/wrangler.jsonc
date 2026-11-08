@@ -37,6 +37,18 @@
       "database_id": "bf11c24a-599f-42c8-b700-de5f56c3a377",
       "remote": true,
     },
+    {
+      // Contact and newsletter form data (src/forms): `submissions` and `newsletter_signups`,
+      // kept out of the main database (personal data, purged after FORMS_RETENTION_DAYS by the
+      // Cron Trigger). The app owns the schema: `pnpm forms-store:migrate` (local) /
+      // `pnpm forms-store:migrate:remote` apply it, and the store also applies it on first use.
+      "binding": "FORMS_D1",
+      "database_name": "shipment-forms",
+      // TODO before deploying: `wrangler d1 create shipment-forms` and put its id here. Local dev
+      // and CI work with any id (the local D1 in `.wrangler/state`).
+      "database_id": "FORMS_D1_PRODUCTION_ID_TODO",
+      "remote": true,
+    },
   ],
   // A/B experiment measurement (src/plugins/abMeasurement.ts): one data point per impression
   // and per conversion, no personal data. Datasets are created on first write; no setup.
@@ -113,6 +125,14 @@
       "namespace_id": "1006",
       "simple": { "limit": 10, "period": 60 },
     },
+    // Contact and newsletter forms (`POST /api/forms/:form`, unauthenticated), per client IP,
+    // checked before Turnstile so a flood costs no Siteverify calls. A person sends a form once
+    // or twice; 10 a minute leaves room for visitors behind one shared IP. See src/forms.
+    {
+      "name": "FORMS_RATE_LIMIT",
+      "namespace_id": "1007",
+      "simple": { "limit": 10, "period": 60 },
+    },
   ],
   // The admin assistant (packages/payload-plugin-assistant): one Durable Object per conversation
   // (transcript, runs, approvals, stream log, in its own SQLite: nothing in D1) and one per user
@@ -164,6 +184,13 @@
           "database_id": "cdf1d01a-92e6-44f0-82d1-dca950d4f8ff",
           "remote": true,
         },
+        {
+          "binding": "FORMS_D1",
+          "database_name": "shipment-forms-staging",
+          // TODO before deploying: `wrangler d1 create shipment-forms-staging`.
+          "database_id": "FORMS_D1_STAGING_ID_TODO",
+          "remote": true,
+        },
       ],
       "analytics_engine_datasets": [
         { "binding": "AB_ANALYTICS", "dataset": "shipment_ab_staging" },
@@ -201,6 +228,11 @@
         {
           "name": "OAUTH_RATE_LIMIT_REGISTER",
           "namespace_id": "1106",
+          "simple": { "limit": 10, "period": 60 },
+        },
+        {
+          "name": "FORMS_RATE_LIMIT",
+          "namespace_id": "1107",
           "simple": { "limit": 10, "period": 60 },
         },
       ],

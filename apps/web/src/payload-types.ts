@@ -159,6 +159,7 @@ export interface Config {
     logos: LogosBlock;
     stats: StatsBlock;
     cta: CtaBlock;
+    form: FormBlock;
     pricing: PricingBlock;
     mediaBlock: MediaSectionBlock;
     gallery: GalleryBlock;
@@ -342,6 +343,7 @@ export interface Page {
     | LogosBlock
     | StatsBlock
     | CtaBlock
+    | FormBlock
     | PricingBlock
     | MediaSectionBlock
     | GalleryBlock
@@ -1042,6 +1044,51 @@ export interface CtaBlock {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FormBlock".
+ */
+export interface FormBlock {
+  variant: 'stacked' | 'split' | 'inline';
+  /**
+   * Contact messages and newsletter signups are listed under Forms in the sidebar, never in this page.
+   */
+  form: 'contact' | 'newsletter';
+  /**
+   * Short label above the title.
+   */
+  eyebrow?: string | null;
+  title?: string | null;
+  description?: string | null;
+  /**
+   * Shown beside the form.
+   */
+  media?: (number | null) | Media;
+  nameLabel?: string | null;
+  emailLabel?: string | null;
+  messageLabel?: string | null;
+  namePlaceholder?: string | null;
+  emailPlaceholder?: string | null;
+  messagePlaceholder?: string | null;
+  /**
+   * Optional. When set, visitors tick it to subscribe, and this text is stored with their signup as proof of consent.
+   */
+  consent?: string | null;
+  submitLabel?: string | null;
+  successTitle?: string | null;
+  successMessage?: string | null;
+  section: {
+    background: 'default' | 'muted' | 'dark';
+    spacing: 'none' | 'sm' | 'md' | 'lg';
+    /**
+     * Lets links jump here with #anchor. Lowercase letters, digits, dashes.
+     */
+    anchor?: string | null;
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'form';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "PricingBlock".
  */
 export interface PricingBlock {
@@ -1391,6 +1438,7 @@ export interface Section {
     | LogosBlock
     | StatsBlock
     | CtaBlock
+    | FormBlock
     | PricingBlock
     | MediaSectionBlock
     | GalleryBlock

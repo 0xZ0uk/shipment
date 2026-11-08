@@ -148,6 +148,7 @@ jobs:
         run: |
           pnpm web migrate
           pnpm web seo-store:migrate
+          pnpm web forms-store:migrate
 
       # Starts `vite dev` itself (playwright.config.ts) on a fresh local D1.
       - name: Playwright

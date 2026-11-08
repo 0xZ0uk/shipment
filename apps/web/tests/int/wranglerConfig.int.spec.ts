@@ -30,4 +30,20 @@ describe('wrangler.jsonc', () => {
     expect(read().images).toEqual({ binding: 'IMAGES' })
     expect(read('staging').images).toEqual({ binding: 'IMAGES' })
   })
+
+  it('binds the forms database and rate limit in every environment, on their own resources', () => {
+    const forms = (env?: string) => {
+      const config = read(env)
+      return {
+        db: (config.d1_databases as Array<{ binding: string; database_name?: string }>).find(
+          (d) => d.binding === 'FORMS_D1',
+        )?.database_name,
+        limit: (config.ratelimits as Array<{ name: string; namespace_id: string }>).find(
+          (r) => r.name === 'FORMS_RATE_LIMIT',
+        )?.namespace_id,
+      }
+    }
+    expect(forms()).toEqual({ db: 'shipment-forms', limit: '1007' })
+    expect(forms('staging')).toEqual({ db: 'shipment-forms-staging', limit: '1107' })
+  })
 })
