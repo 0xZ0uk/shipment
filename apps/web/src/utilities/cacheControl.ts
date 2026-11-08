@@ -7,8 +7,8 @@
  * - **Responses are private unless they opt in.** `withDefaultCacheControl` (wrapped around
  *   `fetch` in `src/server.ts`) gives every response without a `Cache-Control` header
  *   `private, no-cache`, and leaves a response that set its own alone.
- * - **Only an anonymous, published page view opts in** (`isPublicPageView`, from `loadPage`),
- *   with `publicPageHeaders`: a short browser lifetime, a longer edge lifetime and `Cache-Tag`s
+ * - **Only an anonymous, published page view opts in** (`isPublicPageView`, from `loadPage` and
+ *   the blog's loaders; the RSS feed when `SITE_URL` is set), with `publicPageHeaders`: a short browser lifetime, a longer edge lifetime and `Cache-Tag`s
  *   that the purge hooks (`src/plugins/edgeCachePurge.ts`) clear on publish.
  *
  * Pure: no Payload, TanStack or `cloudflare:workers` imports, so tests and the server entry can
@@ -31,6 +31,42 @@ export const LAYOUT_TAG = 'layout'
 export const pageTag = (path: string) => `page:${path}`
 
 /**
+ * Tag on every response that lists posts: the blog and category archives, the RSS feed, and
+ * pages with a Posts archive block. Publishing, unpublishing, changing or deleting a post purges
+ * it, and so does a change to an author or a category (their names show in the lists).
+ */
+export const POSTS_TAG = 'posts'
+
+/** Tag on the post pages that show author `id` (their byline). */
+export const authorTag = (id: number | string) => `author:${id}`
+
+/** Tag on the post pages and the archive that show category `id`. */
+export const categoryTag = (id: number | string) => `category:${id}`
+
+/** The ids of a relationship value (populated documents or bare ids). */
+const relationIds = (list: unknown): (number | string)[] =>
+  Array.isArray(list)
+    ? list
+        .map((item) => (item && typeof item === 'object' ? (item as { id?: unknown }).id : item))
+        .filter((id): id is number | string => typeof id === 'number' || typeof id === 'string')
+    : []
+
+/**
+ * A post page's tags on top of its path and `layout`: its authors' and categories' (their names
+ * show on it). Not `posts`: publishing another post changes nothing on this one.
+ */
+export const postPageTags = (post: { authors?: unknown; categories?: unknown }): string[] => [
+  ...relationIds(post.authors).map(authorTag),
+  ...relationIds(post.categories).map(categoryTag),
+]
+
+/** An archive page's tags on top of its path and `layout`: `posts`, and its category's. */
+export const archivePageTags = (categoryId?: null | number | string): string[] => [
+  POSTS_TAG,
+  ...(categoryId != null ? [categoryTag(categoryId)] : []),
+]
+
+/**
  * Browsers (and any other cache on the way) check back every time: the edge answers from its
  * cache, and an editor who reloads right after publishing sees the purged, fresh page.
  */
@@ -47,11 +83,19 @@ export const PUBLIC_PAGE_CACHE_CONTROL = 'public, max-age=0, must-revalidate'
  */
 export const PUBLIC_PAGE_CDN_CACHE_CONTROL = 'max-age=300, stale-while-revalidate=86400'
 
-/** The headers `loadPage` sets on a page view that opted in. */
-export const publicPageHeaders = (path: string): Record<string, string> => ({
+/**
+ * The headers a response that opted in gets (`loadPage`, the blog's loaders and its feed): its
+ * path's tag, `layout`, and `tags` for what else it shows (`posts`, an author, a category).
+ * `layout` goes on every cached response, the feed included: the purger falls back to purging it
+ * alone when a batch is large, so it must cover everything (`createEdgeCachePurger`).
+ */
+export const publicPageHeaders = (
+  path: string,
+  tags: readonly string[] = [],
+): Record<string, string> => ({
   'Cache-Control': PUBLIC_PAGE_CACHE_CONTROL,
   'Cloudflare-CDN-Cache-Control': PUBLIC_PAGE_CDN_CACHE_CONTROL,
-  'Cache-Tag': [pageTag(path), LAYOUT_TAG].join(','),
+  'Cache-Tag': [...new Set([pageTag(path), LAYOUT_TAG, ...tags])].join(','),
 })
 
 /**

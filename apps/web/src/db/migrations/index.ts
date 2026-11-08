@@ -13,6 +13,7 @@ import * as migration_20261106_110114_ab_ended_runs from './20261106_110114_ab_e
 import * as migration_20261106_193957_fk_on_delete from './20261106_193957_fk_on_delete';
 import * as migration_20261107_001439_mcp_oauth from './20261107_001439_mcp_oauth';
 import * as migration_20261108_104515_cookie_consent from './20261108_104515_cookie_consent';
+import * as migration_20261108_114554_posts from './20261108_114554_posts';
 
 export const migrations = [
   {
@@ -88,6 +89,11 @@ export const migrations = [
   {
     up: migration_20261108_104515_cookie_consent.up,
     down: migration_20261108_104515_cookie_consent.down,
-    name: '20261108_104515_cookie_consent'
+    name: '20261108_104515_cookie_consent',
+  },
+  {
+    up: migration_20261108_114554_posts.up,
+    down: migration_20261108_114554_posts.down,
+    name: '20261108_114554_posts'
   },
 ];

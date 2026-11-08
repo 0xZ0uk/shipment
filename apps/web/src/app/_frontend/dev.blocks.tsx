@@ -8,9 +8,11 @@ import {
   type LayoutBlockType,
 } from '@/blocks/components'
 import { blockMetas } from '@/blocks/gallery'
+import { postsArchiveSamplePosts } from '@/blocks/PostsArchive/meta'
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { DraftModeProvider } from '@/blocks/shared/draftMode'
 import { blockGroups } from '@/blocks/shared/meta'
+import { PostsArchiveProvider } from '@/components/Posts/context'
 
 type GallerySearch = { block?: string; background?: 'dark' | 'default' | 'muted' }
 
@@ -95,7 +97,10 @@ function BlockGallery() {
               {variant && ` / ${variant.label}`}
             </p>
             <DraftModeProvider draft>
-              <RenderBlocks blocks={[exampleBlock(slug, variant?.value, background)]} />
+              {/* No database here: the Posts archive block shows sample posts. */}
+              <PostsArchiveProvider byBlock={{}} fallback={postsArchiveSamplePosts}>
+                <RenderBlocks blocks={[exampleBlock(slug, variant?.value, background)]} />
+              </PostsArchiveProvider>
             </DraftModeProvider>
           </div>
         ))

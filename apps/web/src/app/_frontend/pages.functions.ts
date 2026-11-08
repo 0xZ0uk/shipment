@@ -3,7 +3,10 @@ import type { Payload, RequiredDataFromCollectionSlug, Where } from 'payload'
 import { createServerFn } from '@tanstack/react-start'
 
 import { homeStatic } from '@/collections/Pages/homeStatic'
-import { isPublicPageView, publicPageHeaders } from '@/utilities/cacheControl'
+import type { LayoutBlock } from '@/blocks/components'
+import { collectArchiveBlocks } from '@/components/Posts/archiveBlocks'
+import type { PostSummary } from '@/components/Posts/types'
+import { isPublicPageView, POSTS_TAG, publicPageHeaders } from '@/utilities/cacheControl'
 import { gaMeasurementIdFor } from '@/utilities/googleAnalytics'
 import { pagePath } from '@/utilities/pagePath'
 
@@ -46,6 +49,12 @@ export type LoadPageResult = {
    * nothing GA-related renders. A public id, not a secret.
    */
   gaMeasurementId?: string | null
+  /**
+   * The posts of each Posts archive block on the page (reusable sections' too), by block id:
+   * queried here so they're current, never read from the page's JSON. Published posts only,
+   * even in a draft view.
+   */
+  postsArchive?: Record<string, PostSummary[]>
 }
 
 // Lexical's recursive node types defeat TanStack's serializability check, so it's turned off
@@ -180,10 +189,23 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
     }
 
     let jsonLd: string[] = []
+    const postsArchive: Record<string, PostSummary[]> = {}
+    let showsPosts = false
 
     if (page) {
       const { buildPageJsonLd } = await import('@/utilities/pageJsonLd')
       jsonLd = await buildPageJsonLd(page, siteUrl, { slug: canonicalSlug })
+
+      const archiveBlocks = collectArchiveBlocks(page.layout as LayoutBlock[] | null | undefined)
+      if (archiveBlocks.length > 0) {
+        showsPosts = true
+        const { findPostSummaries } = await import('@/utilities/postQueries')
+        await Promise.all(
+          archiveBlocks.map(async ({ categoryId, id, limit }) => {
+            postsArchive[id] = (await findPostSummaries(payload, { categoryId, limit })).docs
+          }),
+        )
+      }
     }
 
     // Workers Cache: every viewer of this URL gets the same HTML, so the edge may keep it,
@@ -206,7 +228,9 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
       user: user != null,
     })
     if (publicView) {
-      for (const [name, value] of Object.entries(publicPageHeaders(pagePath(data.slug)))) {
+      // A page listing posts (a Posts archive block) is purged when a post is published too.
+      const tags = showsPosts ? [POSTS_TAG] : []
+      for (const [name, value] of Object.entries(publicPageHeaders(pagePath(data.slug), tags))) {
         setResponseHeader(name, value)
       }
     }
@@ -220,6 +244,7 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
       livePreview: Boolean(user) && Boolean(data.draft),
       origin,
       page,
+      postsArchive,
       siteUrl,
     }
   })

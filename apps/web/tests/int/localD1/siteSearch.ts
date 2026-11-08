@@ -178,14 +178,15 @@ export const siteSearch = (getPayload: () => Payload) =>
       await siteSearchIndex.remove('pages', id)
 
       let cursor: { collection: string; page: number } | null = { collection: 'pages', page: 1 }
-      const pages: number[] = []
+      const pages: Record<string, number[]> = {}
       while (cursor) {
         const step = await reindexSearchBatch(payload, cursor)
-        pages.push(step.page)
+        ;(pages[step.collection] ??= []).push(step.page)
         cursor = step.next
       }
-      expect(pages[0]).toBe(1)
-      expect(pages).toEqual(pages.map((_, i) => i + 1))
+      // Every indexed collection in turn (pages, then posts), each from its first page on.
+      expect(Object.keys(pages)).toEqual(['pages', 'posts'])
+      for (const list of Object.values(pages)) expect(list).toEqual(list.map((_, i) => i + 1))
       expect(await paths(word)).toEqual([path])
     })
 

@@ -150,6 +150,7 @@ export interface Config {
     hero: HeroBlock;
     pageHeader: PageHeaderBlock;
     richText: RichTextBlock;
+    postsArchive: PostsArchiveBlock;
     faq: FaqBlock;
     features: FeaturesBlock;
     featureRows: FeatureRowsBlock;
@@ -168,6 +169,9 @@ export interface Config {
   };
   collections: {
     pages: Page;
+    posts: Post;
+    authors: Author;
+    categories: Category;
     sections: Section;
     users: User;
     media: Media;
@@ -192,6 +196,9 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     pages: PagesSelect<false> | PagesSelect<true>;
+    posts: PostsSelect<false> | PostsSelect<true>;
+    authors: AuthorsSelect<false> | AuthorsSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
     sections: SectionsSelect<false> | SectionsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -333,6 +340,7 @@ export interface Page {
     | HeroBlock
     | PageHeaderBlock
     | RichTextBlock
+    | PostsArchiveBlock
     | FaqBlock
     | FeaturesBlock
     | FeatureRowsBlock
@@ -451,6 +459,98 @@ export interface RichTextBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'richText';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "PostsArchiveBlock".
+ */
+export interface PostsArchiveBlock {
+  variant: 'grid' | 'list' | 'featured';
+  /**
+   * Short label above the title.
+   */
+  eyebrow?: string | null;
+  title?: string | null;
+  description?: string | null;
+  /**
+   * How many of the latest posts to show.
+   */
+  count: number;
+  /**
+   * Only posts in this category. Empty: every post.
+   */
+  category?: (number | null) | Category;
+  section: {
+    background: 'default' | 'muted' | 'dark';
+    spacing: 'none' | 'sm' | 'md' | 'lg';
+    /**
+     * Lets links jump here with #anchor. Lowercase letters, digits, dashes.
+     */
+    anchor?: string | null;
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'postsArchive';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  title: string;
+  /**
+   * Shown at the top of the category archive and as its meta description.
+   */
+  description?: string | null;
+  slug: string;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  apiKey?: string | null;
+  apiKeyLast4?: string | null;
+  apiKeyIndex?: string | null;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -684,43 +784,6 @@ export interface Folder {
   createdAt: string;
   _h_slugPath?: string | null;
   _h_titlePath?: string | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: number;
-  createdBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedBy?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
-  updatedAt: string;
-  createdAt: string;
-  apiKey?: string | null;
-  apiKeyLast4?: string | null;
-  apiKeyIndex?: string | null;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  resetPasswordRequestedAt?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1382,6 +1445,7 @@ export interface Section {
     | HeroBlock
     | PageHeaderBlock
     | RichTextBlock
+    | PostsArchiveBlock
     | FaqBlock
     | FeaturesBlock
     | FeatureRowsBlock
@@ -1397,6 +1461,88 @@ export interface Section {
     | EmbedBlock
     | ColumnsBlock
   )[];
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts".
+ */
+export interface Post {
+  id: number;
+  title: string;
+  /**
+   * A sentence or two for the archive, the feed and link previews.
+   */
+  excerpt?: string | null;
+  cover?: (number | null) | Media;
+  content?: LexicalRichText<LexicalNodes_4DFA6439> | null;
+  meta?: {
+    title?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    description?: string | null;
+  };
+  publishedAt?: string | null;
+  authors?: (number | Author)[] | null;
+  categories?: (number | Category)[] | null;
+  slug: string;
+  /**
+   * Cornerstone content is the most important content on your site and should be well linked.
+   */
+  isCornerstone?: boolean | null;
+  /**
+   * Adds a robots "noindex" meta tag and leaves the page out of sitemap.xml and llms.txt.
+   */
+  noindex?: boolean | null;
+  /**
+   * Target keyword for SEO analysis
+   */
+  focusKeyword?: string | null;
+  /**
+   * Secondary keywords (in addition to the primary keyword)
+   */
+  focusKeywords?:
+    | {
+        keyword: string;
+        id?: string | null;
+      }[]
+    | null;
+  createdBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedBy?: {
+    relationTo: 'users';
+    value: number | User;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authors".
+ */
+export interface Author {
+  id: number;
+  name: string;
+  avatar?: (number | null) | Media;
+  /**
+   * One or two sentences, shown under the post.
+   */
+  bio?: string | null;
+  slug: string;
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -1761,7 +1907,7 @@ export interface SocialTemplate {
   /**
    * The collection (source kind) this template is built from. The builder offers that collection’s fields, and the composer only shows this template when publishing from that collection.
    */
-  sourceKind: 'page';
+  sourceKind: 'page' | 'post';
   /**
    * Default for this collection. When set, the composer auto-applies this template for its source kind (still honoring the platform filter below). Only one template per source kind can be the default.
    */
@@ -2067,6 +2213,18 @@ export interface PayloadLockedDocument {
         value: number | Page;
       } | null)
     | ({
+        relationTo: 'posts';
+        value: number | Post;
+      } | null)
+    | ({
+        relationTo: 'authors';
+        value: number | Author;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: number | Category;
+      } | null)
+    | ({
         relationTo: 'sections';
         value: number | Section;
       } | null)
@@ -2207,6 +2365,68 @@ export interface PagesSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts_select".
+ */
+export interface PostsSelect<T extends boolean = true> {
+  title?: T;
+  excerpt?: T;
+  cover?: T;
+  content?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        image?: T;
+        description?: T;
+      };
+  publishedAt?: T;
+  authors?: T;
+  categories?: T;
+  slug?: T;
+  isCornerstone?: T;
+  noindex?: T;
+  focusKeyword?: T;
+  focusKeywords?:
+    | T
+    | {
+        keyword?: T;
+        id?: T;
+      };
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authors_select".
+ */
+export interface AuthorsSelect<T extends boolean = true> {
+  name?: T;
+  avatar?: T;
+  bio?: T;
+  slug?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  title?: T;
+  description?: T;
+  slug?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3210,6 +3430,9 @@ export interface CollectionQueryWidget {
     title?: string | null;
     relatedCollection:
       | 'pages'
+      | 'posts'
+      | 'authors'
+      | 'categories'
       | 'sections'
       | 'users'
       | 'media'
@@ -3244,6 +3467,9 @@ export interface ActivityWidget {
     excludedCollections?:
       | (
           | 'pages'
+          | 'posts'
+          | 'authors'
+          | 'categories'
           | 'sections'
           | 'users'
           | 'media'

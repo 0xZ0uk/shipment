@@ -7,6 +7,8 @@ import { ConsentProvider } from '@/components/CookieConsent'
 import { NotFound } from '@/components/NotFound'
 import { Footer } from '@/Footer/Component'
 import { Header } from '@/Header/Component'
+import { BLOG_FEED_PATH } from '@/utilities/postPath'
+import { siteName } from '@/utilities/siteName'
 
 import { loadLayout } from './_frontend/layout.functions'
 import styles from './_frontend/styles.css?url'
@@ -14,7 +16,16 @@ import styles from './_frontend/styles.css?url'
 export const Route = createFileRoute('/_frontend')({
   component: FrontendLayout,
   head: () => ({
-    links: [{ rel: 'stylesheet', href: styles }],
+    links: [
+      { rel: 'stylesheet', href: styles },
+      // The blog's feed, for feed readers (relative: cached HTML is shared across hostnames).
+      {
+        href: BLOG_FEED_PATH,
+        rel: 'alternate',
+        title: `${siteName} blog`,
+        type: 'application/rss+xml',
+      },
+    ],
   }),
   loader: () => loadLayout(),
   // Every full page load fetches the header and footer fresh; client-side navigation reuses

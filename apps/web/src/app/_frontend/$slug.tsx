@@ -51,7 +51,8 @@ export const Route = createFileRoute('/_frontend/$slug')({
 })
 
 function SlugPage() {
-  const { draft, experiment, gaMeasurementId, livePreview, page } = Route.useLoaderData()
+  const { draft, experiment, gaMeasurementId, livePreview, page, postsArchive } =
+    Route.useLoaderData()
 
   return page ? (
     <PageTemplate
@@ -60,6 +61,7 @@ function SlugPage() {
       gaMeasurementId={gaMeasurementId}
       livePreview={livePreview}
       page={page}
+      postsArchive={postsArchive}
     />
   ) : null
 }

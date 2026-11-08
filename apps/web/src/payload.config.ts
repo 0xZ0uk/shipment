@@ -24,15 +24,18 @@ import { Media } from './collections/Media'
 import { Folders } from './collections/Folders'
 import { Tags } from './collections/Tags'
 import { Pages } from './collections/Pages'
+import { Posts } from './collections/Posts'
+import { Authors } from './collections/Authors'
+import { Categories } from './collections/Categories'
 import { Sections } from './collections/Sections'
 import { blocks } from './blocks'
 import { referencesSection } from './blocks/GlobalSection/references'
 import { createEmailAdapter } from './email'
 import { Footer } from './Footer/config'
 import { Header } from './Header/config'
-import { seedHomeEndpoint } from './endpoints/seed'
+import { seedBlogEndpoint, seedHomeEndpoint } from './endpoints/seed'
 import { defaultLexical } from './fields/defaultLexical'
-import type { Page } from './payload-types'
+import type { Page, Post } from './payload-types'
 import { abMeasurementConfig } from './plugins/abMeasurement'
 import { abStorage, isAbVariant } from './plugins/abTesting'
 import { edgeCachePurge } from './plugins/edgeCachePurge'
@@ -47,6 +50,7 @@ import { siteSearch } from './plugins/siteSearch'
 import { SocialsPlugin } from './plugins/socials'
 import { siteSearchIndex } from './search/siteIndex'
 import { pagePath } from './utilities/pagePath'
+import { postPath } from './utilities/postPath'
 import { siteName } from './utilities/siteName'
 import { createEdgeCachePurger } from './utilities/edgeCache'
 import { createWorkersLogger } from './utilities/workersLogger'
@@ -59,11 +63,14 @@ const cloudflareLogger = createWorkersLogger({ level: process.env.PAYLOAD_LOG_LE
 // Payload's secret also seals onpage's edit-mode cookies and preview links.
 const secret = process.env.PAYLOAD_SECRET || cloudflare.PAYLOAD_SECRET || ''
 
-const generateTitle: GenerateTitle<Page> = ({ doc }) =>
+const generateTitle: GenerateTitle<Page | Post> = ({ doc }) =>
   doc?.title ? `${doc.title} | ${siteName}` : siteName
 
-const generateURL: GenerateURL<Page> = ({ doc, req }) =>
-  `${req.origin}${doc?.slug ? pagePath(doc.slug) : ''}`
+const generateURL: GenerateURL<Page | Post> = ({ collectionConfig, collectionSlug, doc, req }) => {
+  if (!doc?.slug) return req.origin ?? ''
+  const posts = (collectionSlug ?? collectionConfig?.slug) === 'posts'
+  return `${req.origin}${posts ? postPath(doc.slug) : pagePath(doc.slug)}`
+}
 
 export default buildConfig({
   admin: {
@@ -74,7 +81,7 @@ export default buildConfig({
   },
   // Page blocks (src/blocks), defined once and listed by slug in each blocks field.
   blocks,
-  collections: [Pages, Sections, Users, Media, Folders, Tags],
+  collections: [Pages, Posts, Authors, Categories, Sections, Users, Media, Folders, Tags],
   editor: defaultLexical,
   // Forgot-password emails, the SEO alerts digest (SEO_ALERT_EMAIL) and anything else that calls
   // `payload.sendEmail`. Cloudflare Email Service when the `EMAIL` send_email binding is declared,
@@ -86,8 +93,9 @@ export default buildConfig({
     fromAddress: process.env.EMAIL_FROM_ADDRESS || cloudflare.EMAIL_FROM_ADDRESS || undefined,
     fromName: process.env.EMAIL_FROM_NAME || cloudflare.EMAIL_FROM_NAME || siteName,
   }),
-  // POST /api/seed/home: the template's landing page as the homepage (src/endpoints/seed).
-  endpoints: [seedHomeEndpoint],
+  // POST /api/seed/home: the template's landing page as the homepage, plus example blog posts;
+  // POST /api/seed/blog: the blog posts alone (src/endpoints/seed).
+  endpoints: [seedHomeEndpoint, seedBlogEndpoint],
   globals: [Header, Footer],
   secret,
   typescript: {
@@ -147,6 +155,16 @@ export default buildConfig({
           description:
             'Website pages, served at /<slug> (the page with slug "home" is served at /). Built from layout blocks (sections) and SEO meta. Saved as drafts until published. Pages with `_abVariantOf` set are A/B test variants of that page (slug `<original>--<hash>`), shown to a share of its visitors; they are created, weighted and removed in the admin\'s Variants panel, and `_abVariantOf` / `_abPassPercentage` cannot be written here.',
         }),
+        posts: withMarkdownRichText('posts', {
+          description:
+            'Blog posts, served at /blog/<slug> and listed at /blog, /blog/category/<slug> and /blog/rss.xml. `content` is the body (rich text), `excerpt` the summary for the archive and the feed, `authors` and `categories` relationships to those collections. Saved as drafts until published.',
+        }),
+        authors: {
+          description: 'Public bylines for blog posts (name, avatar, short bio). Not admin users.',
+        },
+        categories: {
+          description: 'Blog post categories, each with an archive at /blog/category/<slug>.',
+        },
         sections: withMarkdownRichText('sections'),
         media: withMarkdownRichText('media', {
           description:
@@ -201,7 +219,7 @@ export default buildConfig({
         APP_ENV: process.env.APP_ENV || cloudflare.APP_ENV,
       }),
     }),
-    // Fields are added to Pages by hand (the SEO tab), so no `collections` here.
+    // Fields are added to Pages and Posts by hand (the SEO tab), so no `collections` here.
     seoPlugin({
       generateTitle,
       generateURL,
@@ -217,8 +235,8 @@ export default buildConfig({
     // until a Google OAuth client exists (it also needs a main-D1 migration for `seo-gsc-auth`). Whole-site scans (link graph, keywords,
     // cannibalization…) and IndexNow stay off until the real site exists (GitHub issues #27 and #28).
     seoAnalyzerPlugin({
-      collections: ['pages'],
-      collectionRoutes: { pages: '' },
+      collections: ['pages', 'posts'],
+      collectionRoutes: { pages: '', posts: 'blog' },
       // A/B variants (`_abVariantOf`) are reached through their original's URL, never their
       // own: leave them out of the sitemaps, llms.txt, IndexNow and the whole-site scans. The
       // sidebar still scores a variant an editor opens. Not `noindex` on the variant: its meta
@@ -284,7 +302,7 @@ export default buildConfig({
       measurement: abMeasurementConfig(cloudflare),
     }),
     // On-page editing (packages/onpage): "Edit on page" in the admin opens the page with an
-    // editor, and edits autosave as drafts through Payload's REST API. Pages only: Header and
+    // editor, and edits autosave as drafts through Payload's REST API. Pages and Posts: Header and
     // Footer have no drafts, so every keystroke would publish. Comments and saved sections
     // (`comments`, `patterns`) stay off; each adds a collection to the main D1.
     onpage({
@@ -295,16 +313,20 @@ export default buildConfig({
           // through the original's URL, so they get no "Edit on page".
           hideEditWhen: '_abVariantOf',
         },
+        posts: {
+          url: ({ doc }) => (typeof doc.slug === 'string' ? postPath(doc.slug) : null),
+        },
       },
       session: tanstackSession({ secret }),
     }),
-    // Social publishing (packages/payload-plugin-socials): a Socials tab on Pages and a
+    // Social publishing (packages/payload-plugin-socials): a Socials tab on Pages and Posts and a
     // composer at /admin/socials, Pinterest only. Disabled until SOCIALS_ENCRYPTION_KEY is set;
     // the schema is the same either way. The Cron Trigger runs its queue (src/server.ts).
     SocialsPlugin,
-    // Purges Workers Cache when page HTML changes: pages, header, footer, media, sections, redirects and
-    // the A/B manifest (src/plugins/edgeCachePurge.ts). After the plugins whose collections it
-    // hooks (seo-redirects, ab-manifest). Does nothing under Node (no Workers Cache).
+    // Purges Workers Cache when page HTML changes: pages, posts (and their authors and
+    // categories), header, footer, media, sections, redirects and the A/B manifest
+    // (src/plugins/edgeCachePurge.ts). After the plugins whose collections it hooks
+    // (seo-redirects, ab-manifest). Does nothing under Node (no Workers Cache).
     edgeCachePurge(createEdgeCachePurger({ cache: edgeCache, waitUntil })),
     // Site search (src/plugins/siteSearch.ts): an FTS5 index in SEO_D1 (never the main D1),
     // synced from published pages in the background, queried at `GET /api/search` by the
@@ -315,6 +337,11 @@ export default buildConfig({
         pages: {
           path: (doc) => (typeof doc.slug === 'string' && doc.slug ? pagePath(doc.slug) : null),
           exclude: isAbVariant,
+        },
+        // Title, meta description and the body (`content`); bylines aren't indexed, so author and
+        // category changes need no resync.
+        posts: {
+          path: (doc) => (typeof doc.slug === 'string' && doc.slug ? postPath(doc.slug) : null),
         },
       },
       index: siteSearchIndex,
