@@ -1,4 +1,4 @@
-import type { Payload, PayloadRequest } from 'payload'
+import type { Payload, PayloadRequest, Where } from 'payload'
 
 import { randomUUID } from 'node:crypto'
 
@@ -37,12 +37,9 @@ import { queueReconciliationCheck } from './publicationReconciliation.js'
  * The row is the fence against posting twice: only the caller that moved the
  * row into `publishing` calls the platform. A first publish of new content
  * creates the row, and the unique `idempotencyKey` makes that atomic. Taking
- * back an existing row is a conditional update (`update` with a `where` on the
- * status); Payload runs it as a read, then a write by id, so two callers that
- * interleave between those steps can both match. That window is the same as it
- * was before the ledger; closing it needs a compare-and-swap in the database
- * (or Payload's job concurrency keys for the task), which this module cannot
- * express through the Local API.
+ * back an existing row, and every other guarded status change (a new schedule,
+ * a cancel), is one compare-and-swap in the database (`conditionalUpdate`): of
+ * two callers racing for a row, only one matches (#144).
  *
  * | From                                          | To                      | Who                                     |
  * | --------------------------------------------- | ----------------------- | --------------------------------------- |
@@ -126,9 +123,6 @@ const toPublishedRef = (result: PublishedRef): PublishedRef => ({
   platform: result.platform,
 })
 
-const updatedCount = (result: unknown): number =>
-  (result as { docs?: unknown[] } | undefined)?.docs?.length ?? 0
-
 // ---------------------------------------------------------------------------
 // Reads
 // ---------------------------------------------------------------------------
@@ -173,19 +167,40 @@ const findByKey = async (payload: Payload, idempotencyKey: string): Promise<Ledg
   return (result.docs[0] as LedgerPost | undefined) ?? null
 }
 
+/**
+ * Write `data` to the one row matching `where`, as a single compare-and-swap:
+ * `UPDATE social_posts SET … WHERE … RETURNING *`. Returns whether a row
+ * matched. Every guarded status change in this module (a claim, a new
+ * schedule, a cancel) goes through here, so two callers racing for one row
+ * never both win: the database applies the `where` and the write together.
+ *
+ * It is the database adapter's own atomic update (`payload.db.updateOne` with
+ * `options.atomic`, which Payload's `forgotPassword` uses the same way), not
+ * the Local API: Payload's `update` with a `where` reads the matching ids and
+ * then writes each by id, so two callers interleaved between those steps both
+ * match (#144). Both SQLite adapters (`db-sqlite`, `db-d1-sqlite`) and
+ * Postgres share that code in `@payloadcms/drizzle`, which maps the fields to
+ * the table and its columns; MongoDB's `updateOne` with a `where` is a
+ * `findOneAndUpdate`, atomic as well. The adapter call skips what the Local API
+ * adds: `social-posts` has no hooks or field defaults these writes rely on,
+ * access is not checked here either way, and `updatedAt` is set below. `data`
+ * may only hold fields stored on the collection's own table (no arrays,
+ * `hasMany` or localized fields; the adapter throws otherwise). It runs
+ * outside any request transaction, as the Local API calls did (no `req`).
+ */
 const conditionalUpdate = async (
   payload: Payload,
   data: Record<string, unknown>,
   where: Record<string, unknown>[],
 ): Promise<boolean> => {
-  const result = await payload.update({
-    collection: SOCIAL_POSTS_SLUG as never,
-    data: data as never,
-    limit: 1,
-    overrideAccess: true,
-    where: { and: where },
-  } as never)
-  return updatedCount(result) === 1
+  const row = await payload.db.updateOne({
+    collection: SOCIAL_POSTS_SLUG,
+    data: { ...data, updatedAt: now() },
+    options: { atomic: true },
+    returning: true,
+    where: { and: where } as Where,
+  })
+  return row !== null && row !== undefined
 }
 
 /**
@@ -194,8 +209,8 @@ const conditionalUpdate = async (
  * earlier publication left (a deleted post, a rejected one the operator
  * re-queued), so the only `externalId` on the row is one this attempt records
  * (`recordResult`, `recordUnknown`). A retry-safe failure then leaves the row
- * `failed` with no `externalId`, which Payload's retry claims again. It runs
- * as part of the conditional update, after its `where` matched, so it never
+ * `failed` with no `externalId`, which Payload's retry claims again. It is
+ * written by the conditional update only when its `where` matches, so it never
  * widens which rows may be taken: `unknown`, `publishing`, `published` and
  * `scheduled` rows, and failed rows holding this attempt's id, stay fenced.
  */
@@ -841,9 +856,9 @@ export const recordQueuedJob = async (
 }
 
 /**
- * Take a post for the publish task (a conditional update; see the header on
- * its atomicity). `false` means another worker has it, or it is not in a state
- * the task may publish: do not call the platform.
+ * Take a post for the publish task (an atomic conditional update: of two jobs
+ * racing for the row, one wins). `false` means another worker has it, or it is
+ * not in a state the task may publish: do not call the platform.
  */
 export const claimForPublish = async (payload: Payload, post: LedgerPost): Promise<boolean> =>
   conditionalUpdate(
@@ -986,12 +1001,12 @@ const notQueuedMessage = (status: string): string =>
 
 /**
  * Cancel a post that has not reached any platform yet, through a guarded update (`status =
- * queued`, and with `minLeadSeconds` a `scheduledAt` at least that far ahead). Payload's
- * conditional update selects the matching row and then writes it, as the publish task's claim
- * does, so the guard is not atomic against that claim: a post already due can be claimed between
- * the two steps and publish although this answers cancelled. `minLeadSeconds` closes that window,
- * because the publish task never claims a post before its time. Never calls a platform adapter: a
- * published, publishing or natively scheduled post refuses with 409 and is left as it was.
+ * queued`, and with `minLeadSeconds` a `scheduledAt` at least that far ahead). The update is
+ * atomic, like the publish task's claim, so a cancel and a claim racing for a due post never both
+ * win: either the post is cancelled or this answers 409 and it publishes. `minLeadSeconds` refuses
+ * a post due that soon, so a caller can promise the cancel lands well before the post's time.
+ * Never calls a platform adapter: a published, publishing or natively scheduled post refuses with
+ * 409 and is left as it was.
  */
 export const cancelQueuedSocialPost = async (args: {
   minLeadSeconds?: number

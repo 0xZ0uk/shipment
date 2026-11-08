@@ -89,11 +89,10 @@ export function createBreadcrumbHandler(targetCollections: string[], seoConfig?:
         })
         const settings = settingsResult.docs?.[0]
         if (settings) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const settingsSiteName = (settings as any).siteName
+          const saved = settings as { siteName?: unknown; breadcrumb?: unknown }
+          const settingsSiteName = saved.siteName
           if (typeof settingsSiteName === 'string' && settingsSiteName) siteName = settingsSiteName
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const bc = (settings as any).breadcrumb
+          const bc = saved.breadcrumb as { homeLabel?: unknown; enabled?: unknown; showOnHome?: unknown } | null | undefined
           if (bc && typeof bc === 'object') {
             if (typeof bc.homeLabel === 'string' && bc.homeLabel) homeLabel = bc.homeLabel
             if (typeof bc.enabled === 'boolean') enabled = bc.enabled
@@ -139,8 +138,7 @@ export function createBreadcrumbHandler(targetCollections: string[], seoConfig?:
               ...readAccessOpts(req),
             })
             if (result.docs.length > 0) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const doc = result.docs[0] as any
+              const doc: Record<string, unknown> = result.docs[0]
               // The page's own title (meta title minus the site name if it has none), then
               // the humanized segment.
               name = resolveDocTitle(doc, siteName) || name
@@ -162,8 +160,7 @@ export function createBreadcrumbHandler(targetCollections: string[], seoConfig?:
               ...readAccessOpts(req),
             })
             if (result.docs.length > 0) {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const doc = result.docs[0] as any
+              const doc: Record<string, unknown> = result.docs[0]
               name = resolveDocTitle(doc, siteName) || name
             }
           } catch {

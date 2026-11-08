@@ -25,6 +25,31 @@ interface PriorityOverride {
   changefreq?: string
 }
 
+/** What the `sitemap` group of the `seo-settings` document may hold: read defensively, entry by entry. */
+interface SavedSitemapSettings {
+  excludedSlugs?: unknown
+  defaultChangefreq?: unknown
+  defaultPriority?: unknown
+  priorityOverrides?: unknown
+}
+
+/** An `excludedSlugs` row: a plain slug, or the `{ slug }` row of the array field. */
+type ExcludedSlugEntry = string | { slug?: string } | null | undefined
+
+/** A `priorityOverrides` row as saved; only `slugPattern` is checked before use. */
+interface RawPriorityOverride {
+  slugPattern?: unknown
+  priority?: unknown
+  changefreq?: string
+}
+
+/** The document fields the preview reads. */
+interface SitemapConfigDoc {
+  slug?: string
+  title?: string
+  updatedAt?: string
+}
+
 interface SitemapPreviewEntry {
   url: string
   collection: string
@@ -79,13 +104,11 @@ export function createSitemapConfigHandler(
         })
         const settings = settingsResult.docs?.[0]
         if (settings) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const sitemap = (settings as any).sitemap
+          const sitemap = (settings as { sitemap?: SavedSitemapSettings | null }).sitemap
           if (sitemap && typeof sitemap === 'object') {
             if (Array.isArray(sitemap.excludedSlugs)) {
-              excludedSlugs = sitemap.excludedSlugs
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .map((s: any) => (typeof s === 'string' ? s : s?.slug || ''))
+              excludedSlugs = (sitemap.excludedSlugs as ExcludedSlugEntry[])
+                .map((s) => (typeof s === 'string' ? s : s?.slug || ''))
                 .filter(Boolean)
             }
             if (typeof sitemap.defaultChangefreq === 'string') {
@@ -95,11 +118,9 @@ export function createSitemapConfigHandler(
               defaultPriority = sitemap.defaultPriority
             }
             if (Array.isArray(sitemap.priorityOverrides)) {
-              priorityOverrides = sitemap.priorityOverrides
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .filter((o: any) => o && typeof o.slugPattern === 'string')
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .map((o: any) => ({
+              priorityOverrides = (sitemap.priorityOverrides as Array<RawPriorityOverride | null | undefined>)
+                .filter((o): o is RawPriorityOverride & { slugPattern: string } => !!o && typeof o.slugPattern === 'string')
+                .map((o) => ({
                   slugPattern: o.slugPattern,
                   priority: typeof o.priority === 'number' ? o.priority : defaultPriority,
                   ...(o.changefreq && { changefreq: o.changefreq }),
@@ -124,10 +145,9 @@ export function createSitemapConfigHandler(
       })
 
       for (const { doc, sourceSlug: collectionSlug } of allFetched) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const d = doc as any
-        const slug = (d.slug as string) || ''
-        const title = (d.title as string) || ''
+        const d = doc as SitemapConfigDoc
+        const slug = d.slug || ''
+        const title = d.title || ''
 
         totalPages++
 

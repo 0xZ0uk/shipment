@@ -84,20 +84,20 @@ export function resolveToDocSlug(
 // ---------------------------------------------------------------------------
 
 export function extractAllInternalLinks(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  doc: any,
+  doc: Record<string, unknown>,
   options: { collection?: string; extractors?: ContentExtractorSource } = {},
 ): Array<{ url: string; slug: string; text: string }> {
   const allLinks: Array<{ url: string; text: string }> = []
+  const { hero, content } = doc as { hero?: { richText?: unknown; links?: unknown } | null; content?: unknown }
 
   // 1. Hero richText
-  if (doc.hero?.richText) {
-    allLinks.push(...extractLinksFromLexical(doc.hero.richText))
+  if (hero?.richText) {
+    allLinks.push(...extractLinksFromLexical(hero.richText))
   }
 
   // 2. Hero CTA links (linkGroup)
-  if (doc.hero?.links && Array.isArray(doc.hero.links)) {
-    for (const item of doc.hero.links) {
+  if (hero?.links && Array.isArray(hero.links)) {
+    for (const item of hero.links) {
       if (item && typeof item === 'object') {
         const linkItem = item as Record<string, unknown>
         const linkData = extractPayloadLink(linkItem.link)
@@ -111,8 +111,8 @@ export function extractAllInternalLinks(
   allLinks.push(...extractDocBlocks(doc, options).links)
 
   // 4. Post content (Lexical richText)
-  if (doc.content && typeof doc.content === 'object' && !Array.isArray(doc.content)) {
-    allLinks.push(...extractLinksFromLexical(doc.content))
+  if (content && typeof content === 'object' && !Array.isArray(content)) {
+    allLinks.push(...extractLinksFromLexical(content))
   }
 
   // Filter to internal links only and normalize to slugs

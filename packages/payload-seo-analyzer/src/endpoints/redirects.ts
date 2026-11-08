@@ -8,7 +8,7 @@
  * Next.js middleware, or a reverse proxy like Nginx/Caddy).
  */
 
-import type { PayloadHandler, Where } from 'payload'
+import type { PayloadHandler, PayloadRequest, Where } from 'payload'
 import { parseJsonBody } from '../helpers/parseBody.js'
 import {
   validateRedirectDestination,
@@ -25,8 +25,7 @@ import { isSeoAdminRequest as isAdmin, isSeoPanelUser } from '../helpers/isAdmin
  * `allowExternalRedirects` is off), so the normal update costs no extra read.
  */
 async function isUnchangedDestination(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  req: any,
+  req: PayloadRequest,
   collection: string,
   id: string,
   candidate: string,

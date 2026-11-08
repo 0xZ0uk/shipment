@@ -111,9 +111,8 @@ export function createDuplicateContentHandler(collections: string[], seoConfig?:
             if (allDocs.length >= MAX_DOCS) break
             // The host's exclusion (A/B variants are near-copies of their original by design).
             if (isExcludedDoc(exclusion, doc, collectionSlug)) continue
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const d = doc as any
-            const { pageText: text, analysis } = analyzeLoadedDocument(req.payload, d, { collection: collectionSlug }, {
+            const d = doc as { id?: number | string; title?: string; slug?: string }
+            const { pageText: text, analysis } = analyzeLoadedDocument(req.payload, doc, { collection: collectionSlug }, {
               purpose: 'content',
             })
 
@@ -122,7 +121,7 @@ export function createDuplicateContentHandler(collections: string[], seoConfig?:
 
             allDocs.push({
               info: {
-                id: d.id,
+                id: d.id as number | string,
                 title: d.title || '(untitled)',
                 slug: d.slug || '',
                 collection: collectionSlug,

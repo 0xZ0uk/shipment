@@ -3,6 +3,7 @@ import React from 'react'
 
 import type { Footer as FooterType } from '@/payload-types'
 
+import { CookieSettingsButton } from '@/components/CookieConsent'
 import { CMSLink } from '@/components/Link'
 import { Logo } from '@/components/Logo/Logo'
 import { siteName } from '@/utilities/siteName'
@@ -35,8 +36,15 @@ export const Footer: React.FC<{ data: FooterType }> = ({ data }) => {
           </nav>
         )}
       </div>
-      <div className="container border-t py-6 text-sm text-muted-foreground">
-        © {new Date().getFullYear()} {siteName}
+      <div className="container flex flex-wrap items-center justify-between gap-4 border-t py-6 text-sm text-muted-foreground">
+        <span>
+          © {new Date().getFullYear()} {siteName}
+        </span>
+        {/* Only when the page may load GA4: reopens the cookie banner. */}
+        <CookieSettingsButton
+          className={`cursor-pointer transition-colors duration-150 hover:text-foreground ${focusRing}`}
+          label={data?.cookieConsent?.settingsLabel}
+        />
       </div>
     </footer>
   )

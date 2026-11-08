@@ -180,6 +180,28 @@ describe('socials jobs through Payload’s job runner', () => {
     expect(publish).toHaveBeenCalledTimes(1)
   })
 
+  it('publishes once when two drains run duplicate publish jobs for one post at once (#144)', async () => {
+    const publish = vi.fn().mockResolvedValue({
+      externalId: 'pin_once',
+      externalUrl: 'https://pin.test/once',
+      platform: 'pinterest',
+    })
+    mockAdapterPublish(publish)
+    const postId = await createQueuedPost()
+    // Two publish jobs for the same row (e.g. overlapping sweeps), drained by two workers at once.
+    await queueSocialPostPublish({ payload, postId })
+    await queueSocialPostPublish({ payload, postId })
+    const { queue } = normalizedOptions.scheduling
+    await Promise.all([
+      payload.jobs.run({ overrideAccess: true, queue }),
+      payload.jobs.run({ overrideAccess: true, queue }),
+    ])
+    await drain()
+
+    expect(publish).toHaveBeenCalledTimes(1)
+    expect(await findPost(postId)).toMatchObject({ externalId: 'pin_once', status: 'published' })
+  })
+
   it('records a failed publish as failed, once, without a Payload retry', async () => {
     const publish = vi.fn().mockRejectedValue(new Error('invalid board'))
     mockAdapterPublish(publish)

@@ -413,8 +413,7 @@ export function createIndexationAuditHandler(
       const CACHE_KEY = await keyFor('indexation-audit', req, { cache, config: { collections, globals, seoConfig } })
       // Read the generation before computing, so a save landing mid-scan leaves the stored
       // result stale instead of hiding the save.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const lookup = await cache.lookup<any>('indexation-audit', CACHE_KEY)
+      const lookup = await cache.lookup<Record<string, unknown>>('indexation-audit', CACHE_KEY)
       if (!noCache && lookup.data) {
         return Response.json({ ...lookup.data, cached: true }, { headers: { 'Cache-Control': 'no-store' } })
       }
@@ -429,8 +428,7 @@ export function createIndexationAuditHandler(
       // Every inspected doc (not just flagged ones) — fuels the cross-page hygiene pass.
       const allRecords: IndexationDocRecord[] = []
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const inspect = (doc: any, collection: string, isGlobal = false): void => {
+      const inspect = (doc: Record<string, unknown>, collection: string, isGlobal = false): void => {
         // Only the technical rules, on the slug, canonical and robots fields: they never read
         // content, so the verdict is the same as a full analysis.
         const target: DocumentTarget = isGlobal ? { global: collection.slice('global:'.length) } : { collection }
@@ -445,7 +443,7 @@ export function createIndexationAuditHandler(
           .map((c) => ({ id: c.id, status: c.status, message: c.message }))
         const robotsMeta = input.robotsMeta || ''
         const noindex = robotsMeta.toLowerCase().includes('noindex')
-        const id = doc.id ?? (isGlobal ? collection : '')
+        const id = (doc.id ?? (isGlobal ? collection : '')) as number | string
         const slug = (doc.slug as string) || ''
         const title = (doc.title as string) || slug || String(doc.id ?? collection)
 

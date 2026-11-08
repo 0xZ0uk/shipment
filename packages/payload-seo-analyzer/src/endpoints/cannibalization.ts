@@ -65,7 +65,7 @@ export function createCannibalizationHandler(
       // user without the role silently gets the cached result instead of a 403.
       const noCache = url.searchParams.get('nocache') === '1' && isSeoAdminRequest(req)
       const CACHE_KEY = await keyFor('cannibalization', req)
-      const cached = noCache ? null : seoCache.get<any>(CACHE_KEY)
+      const cached = noCache ? null : seoCache.get<Record<string, unknown>>(CACHE_KEY)
       if (cached) {
         return Response.json({ ...cached, cached: true })
       }
@@ -81,11 +81,10 @@ export function createCannibalizationHandler(
       })
 
       for (const { doc, sourceType, sourceSlug } of allFetched) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const d = doc as any
+        const d = doc as { id?: number | string; title?: string; slug?: string; focusKeyword?: unknown; focusKeywords?: Array<string | { keyword?: unknown } | null> }
         const collectionLabel = sourceType === 'global' ? `global:${sourceSlug}` : sourceSlug
         const pageEntry: PageEntry = {
-          id: sourceType === 'global' ? sourceSlug : d.id,
+          id: sourceType === 'global' ? sourceSlug : (d.id as number | string),
           title: d.title || '(untitled)',
           slug: d.slug || '',
           collection: collectionLabel,

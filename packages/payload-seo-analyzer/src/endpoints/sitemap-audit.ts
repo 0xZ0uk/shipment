@@ -78,8 +78,7 @@ export function createSitemapAuditHandler(
       const CACHE_KEY = await keyFor('sitemap-audit', req, { cache, config: keyConfig })
       // Read the generation before computing (even on nocache) so a save that lands while
       // this request runs leaves the stored result stale rather than hiding the save.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const lookup = await cache.lookup<any>('sitemap-audit', CACHE_KEY)
+      const lookup = await cache.lookup<Record<string, unknown>>('sitemap-audit', CACHE_KEY)
       const cached = noCache ? null : lookup.data
       if (cached) {
         return Response.json({ ...cached, cached: true }, { headers: { 'Cache-Control': 'no-store' } })
@@ -95,8 +94,7 @@ export function createSitemapAuditHandler(
           overrideAccess: true,
         })
         for (const r of redirectsResult.docs) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const rd = r as any
+          const rd = r as { from?: unknown }
           if (typeof rd.from === 'string') {
             // Normalize: remove leading slash for comparison
             const normalized = rd.from.replace(/^\/+/, '').toLowerCase()
@@ -143,13 +141,12 @@ export function createSitemapAuditHandler(
           await new Promise<void>((resolve) => setImmediate(resolve))
         }
         processed++
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const d = doc as any
-        const slug = (d.slug as string) || ''
-        const title = (d.title as string) || ''
+        const d = doc as { id?: number | string; slug?: string; title?: string }
+        const slug = d.slug || ''
+        const title = d.title || ''
 
         const docInfo = {
-          id: d.id,
+          id: d.id as number | string,
           title,
           slug,
           collection: collectionSlug,
@@ -158,7 +155,7 @@ export function createSitemapAuditHandler(
         slugMap.set(slug, docInfo)
 
         // Extract all internal links from this document
-        const internalLinks = extractAllInternalLinks(d, { collection: collectionSlug, extractors: req.payload })
+        const internalLinks = extractAllInternalLinks(doc, { collection: collectionSlug, extractors: req.payload })
         outgoingMap.set(slug, internalLinks)
       }
 

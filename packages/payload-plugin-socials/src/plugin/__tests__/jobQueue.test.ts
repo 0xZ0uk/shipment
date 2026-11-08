@@ -31,6 +31,7 @@ interface MockPayload {
     queue: ReturnType<typeof vi.fn>
     run: ReturnType<typeof vi.fn>
   }
+  db: { updateOne: ReturnType<typeof vi.fn> }
   logger: undefined
   update: ReturnType<typeof vi.fn>
 }
@@ -41,6 +42,7 @@ const asPayload = (p: MockPayload): Payload => p as unknown as Payload
 beforeEach(() => {
   payload = {
     create: vi.fn().mockResolvedValue({ id: 'post_1' }),
+    db: { updateOne: vi.fn().mockResolvedValue({ id: 'post_1' }) },
     find: vi.fn().mockResolvedValue({ docs: [] }),
     jobs: {
       cancelByID: vi.fn().mockResolvedValue(undefined),
@@ -212,11 +214,12 @@ describe('scheduleSocialPostPublish', () => {
     payload.find.mockResolvedValue({
       docs: [{ id: 'post_old', status: 'cancelled' }],
     })
-    payload.update.mockResolvedValue({ docs: [{ id: 'post_old' }], errors: [] })
+    payload.db.updateOne.mockResolvedValue({ id: 'post_old' })
     const result = await scheduleSocialPostPublish(baseArgs())
     expect(result.postId).toBe('post_old')
     expect(payload.create).not.toHaveBeenCalled()
-    expect(payload.update.mock.calls[0][0].where).toEqual({
+    expect(payload.db.updateOne.mock.calls[0][0].options).toEqual({ atomic: true })
+    expect(payload.db.updateOne.mock.calls[0][0].where).toEqual({
       and: [
         { id: { equals: 'post_old' } },
         { status: { in: ['cancelled', 'deleted', 'draft', 'failed', 'queued'] } },
@@ -228,7 +231,7 @@ describe('scheduleSocialPostPublish', () => {
     payload.find.mockResolvedValue({
       docs: [{ id: 'post_old', platform: 'pinterest', status: 'unknown' }],
     })
-    payload.update.mockResolvedValue({ docs: [], errors: [] })
+    payload.db.updateOne.mockResolvedValue(null)
     await expect(scheduleSocialPostPublish(baseArgs())).rejects.toMatchObject({ statusCode: 409 })
     expect(payload.jobs.queue).not.toHaveBeenCalled()
   })
@@ -237,7 +240,7 @@ describe('scheduleSocialPostPublish', () => {
     payload.find.mockResolvedValue({
       docs: [{ id: 'post_old', queuedJobId: 'job_old', status: 'queued' }],
     })
-    payload.update.mockResolvedValue({ docs: [{ id: 'post_old' }], errors: [] })
+    payload.db.updateOne.mockResolvedValue({ id: 'post_old' })
     await scheduleSocialPostPublish(baseArgs())
     expect(payload.jobs.cancelByID).toHaveBeenCalledWith({ id: 'job_old', overrideAccess: true })
   })

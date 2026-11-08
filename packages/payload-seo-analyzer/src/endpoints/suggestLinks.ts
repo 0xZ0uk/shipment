@@ -98,8 +98,7 @@ export function createSuggestLinksHandler(
           if (!docTitle && !docSlug) continue
           // A noindex page is hidden from search engines on purpose: don't suggest linking to it.
           if (doc.noindex === true || (doc.meta as Record<string, unknown> | undefined)?.noindex === true) continue
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const docKeyword = ((doc as any).focusKeyword as string) || ''
+          const docKeyword = (doc.focusKeyword as string) || ''
 
           index.push({
             id: String(doc.id ?? ''),

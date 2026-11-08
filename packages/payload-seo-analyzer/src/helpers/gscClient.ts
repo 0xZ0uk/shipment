@@ -57,11 +57,26 @@ export function getGscOAuthConfig(
   return { clientId, clientSecret, siteUrl, redirectUri: `${siteUrl}${apiRoute}${basePath}/gsc/callback` }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getOrCreateGscAuthDoc(payload: Payload): Promise<any> {
+/** The fields of the `seo-gsc-auth` singleton the endpoints read (the collection is this plugin's, not in the host's generated types). */
+export interface GscAuthDoc {
+  id: number | string
+  /** The refresh token, encrypted at rest (`tokenCrypto`). */
+  refreshTokenEnc?: string | null
+  connectedEmail?: string | null
+  connectedAt?: string | null
+  propertyUrl?: string | null
+  /** The OAuth `state` of a connect flow in progress. */
+  pendingState?: string | null
+}
+
+export async function getOrCreateGscAuthDoc(payload: Payload): Promise<GscAuthDoc> {
   const found = await payload.find({ collection: GSC_AUTH_COLLECTION, limit: 1, overrideAccess: true })
-  if (found.docs.length > 0) return found.docs[0]
-  return payload.create({ collection: GSC_AUTH_COLLECTION, data: {}, overrideAccess: true })
+  if (found.docs.length > 0) return found.docs[0] as unknown as GscAuthDoc
+  return (await payload.create({
+    collection: GSC_AUTH_COLLECTION,
+    data: {},
+    overrideAccess: true,
+  })) as unknown as GscAuthDoc
 }
 
 /** Exchange an authorization code or refresh token for a fresh access token. */
@@ -92,14 +107,13 @@ export async function gscTokenRequest(
 export async function getGscAccessToken(
   payload: Payload,
   cfg: GscOAuthConfig,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  authDoc: any,
+  authDoc: Pick<GscAuthDoc, 'refreshTokenEnc'> | null | undefined,
 ): Promise<string> {
   if (!authDoc?.refreshTokenEnc) throw new Error('not_connected')
   const secret = (payload as unknown as { secret?: string }).secret || ''
   let refreshToken: string
   try {
-    refreshToken = await decryptToken(authDoc.refreshTokenEnc as string, secret)
+    refreshToken = await decryptToken(authDoc.refreshTokenEnc, secret)
   } catch (cause) {
     // Keep the reason (wrong key, tampering, legacy format without node:crypto): never swallow it.
     const reason = cause instanceof Error ? cause.message : String(cause)

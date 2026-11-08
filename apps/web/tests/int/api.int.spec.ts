@@ -6,6 +6,7 @@ import { describe, it, beforeAll, expect } from 'vitest'
 import { seedHome } from './localD1/seedHome'
 import { seoSidebarParity } from './localD1/seoSidebarParity'
 import { siteSearch } from './localD1/siteSearch'
+import { socialsAtomicUpdate } from './localD1/socialsAtomicUpdate'
 
 let payload: Payload
 
@@ -36,3 +37,4 @@ describe('API', () => {
 seoSidebarParity(() => payload)
 seedHome(() => payload)
 siteSearch(() => payload)
+socialsAtomicUpdate(() => payload)

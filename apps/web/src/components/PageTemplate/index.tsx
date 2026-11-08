@@ -6,6 +6,7 @@ import type { LoadPageResult } from '@/app/_frontend/pages.functions'
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { DraftModeProvider } from '@/blocks/shared/draftMode'
 import { AbConversionTracker } from '@/components/AbConversionTracker'
+import { useConsent } from '@/components/CookieConsent'
 import { GoogleAnalyticsConfig } from '@/components/GoogleAnalytics'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
 
@@ -21,6 +22,8 @@ export const PageTemplate: React.FC<{
   page: NonNullable<LoadPageResult['page']>
 }> = ({ draft, experiment, gaMeasurementId, livePreview, page }) => {
   const { layout } = page
+  // Read on the client only (after hydration): the server renders the same HTML for everyone.
+  const { choice } = useConsent()
 
   return (
     <article data-test="payload-ui-barrel-sentinel">
@@ -28,9 +31,10 @@ export const PageTemplate: React.FC<{
           the route once on mount. */}
       {livePreview && <LivePreviewListener />}
       {experiment && !draft && <AbConversionTracker experiment={experiment} />}
-      {/* GA4 (head: `gtagScripts`). The tracker sets the experiment's dimensions before the
-          config call, so the first page view carries them. Neither renders without the id. */}
-      {gaMeasurementId && !draft && (
+      {/* GA4, once the visitor accepts the cookie banner (head: `gtagScripts`, a stub). The
+          tracker sets the experiment's dimensions before the config call, so the first page
+          view carries them. Neither renders without the id or consent. */}
+      {gaMeasurementId && !draft && choice === 'granted' && (
         <>
           {experiment && <ExperimentTracker experimentId={experiment} />}
           <GoogleAnalyticsConfig measurementId={gaMeasurementId} />
