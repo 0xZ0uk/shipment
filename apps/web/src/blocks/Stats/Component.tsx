@@ -8,18 +8,33 @@ import { cn } from '@/utilities/ui'
 
 type Item = NonNullable<StatsBlockProps['items']>[number]
 
-const valueClass = 'text-4xl font-semibold tracking-tighter tabular-nums md:text-5xl'
+const valueClass = 'text-4xl font-medium tracking-[-0.03em] tabular-nums md:text-5xl'
 
 /**
- * One stat: `<dt>` label and `<dd>` value, in that source order (a term before its
- * definition), with the value shown first.
+ * One stat: `<dt>` label, then `<dd>` value and description, in that source order (a term
+ * before its definitions), with the value shown first.
  */
 const Stat: React.FC<{ className?: string; item: Item }> = ({ className, item }) => (
-  <div className={cn('flex flex-col-reverse gap-2', className)}>
-    <dt className="text-sm font-medium text-muted-foreground">{item.label}</dt>
-    <dd className={valueClass}>{item.value}</dd>
+  <div className={cn('flex flex-col gap-1.5', className)}>
+    <dt className="text-sm font-medium">{item.label}</dt>
+    <dd className={cn('order-first mb-2', valueClass)}>{item.value}</dd>
+    {item.description && (
+      <dd className="text-sm text-pretty whitespace-pre-line text-muted-foreground">
+        {item.description}
+      </dd>
+    )}
   </div>
 )
+
+/** Hairlines between the row's cells: one column, two from `sm`, four from `lg`. */
+const rowCellBorders = (index: number) =>
+  cn(
+    index > 0 && 'border-t',
+    index % 2 === 1 ? 'sm:border-l' : 'sm:border-l-0',
+    index >= 2 ? 'sm:border-t' : 'sm:border-t-0',
+    index % 4 !== 0 ? 'lg:border-l' : 'lg:border-l-0',
+    index >= 4 ? 'lg:border-t' : 'lg:border-t-0',
+  )
 
 export const StatsBlock: React.FC<StatsBlockProps> = ({
   description,
@@ -75,15 +90,10 @@ export const StatsBlock: React.FC<StatsBlockProps> = ({
             ))}
           </dl>
         ) : (
-          <dl className="grid grid-cols-2 gap-y-10 text-center lg:grid-cols-4 lg:gap-y-10">
+          <dl className="grid border-y sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((item, index) => (
               <Stat
-                className={cn(
-                  'items-center px-4 lg:px-8',
-                  // Subtle dividers between columns: before every item that isn't first in its line.
-                  index % 2 === 1 && 'border-l',
-                  index % 4 !== 0 ? 'lg:border-l' : 'lg:border-l-0',
-                )}
+                className={cn('px-6 py-8 lg:py-10', rowCellBorders(index))}
                 item={item}
                 key={item.id ?? index}
               />

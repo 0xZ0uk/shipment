@@ -37,7 +37,7 @@ const Buttons: React.FC<{ links?: Links | null; onPrimary?: boolean; className?:
             {...link}
             appearance={onPrimary && !outline ? 'secondary' : (link.appearance ?? 'default')}
             className={cn(
-              'h-11 px-6 text-base sm:w-auto',
+              'sm:w-auto',
               onPrimary &&
                 outline &&
                 'border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground dark:border-primary-foreground/40 dark:bg-transparent dark:hover:bg-primary-foreground/10',
@@ -74,7 +74,7 @@ export const CtaBlock: React.FC<CtaBlockProps> = ({
     return (
       <div className="container">
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-8 text-center">
-          <SectionHeading {...heading} className="max-w-3xl [&_h2]:text-4xl md:[&_h2]:text-5xl" />
+          <SectionHeading {...heading} className="max-w-3xl" />
           <Buttons className="justify-center" links={links} />
         </div>
       </div>

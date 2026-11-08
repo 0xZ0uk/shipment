@@ -194,7 +194,7 @@ test.describe('On-page editing', () => {
 
     // Link viewers navigate with full page loads (each page checked on the server), and one
     // press of Back returns to the shared page, still showing the draft.
-    await page.getByRole('link', { name: 'Payload Logo' }).first().click()
+    await page.getByRole('link', { name: 'Shipment home' }).first().click()
     await expect(page).toHaveURL(/\/$/)
     await page.goBack()
     await expect(page).toHaveURL(new RegExp(`/${slug}$`))

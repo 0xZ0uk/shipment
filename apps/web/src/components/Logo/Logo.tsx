@@ -1,28 +1,24 @@
-import { cn } from '@/utilities/ui'
 import React from 'react'
 
-interface Props {
-  className?: string
-  loading?: 'lazy' | 'eager'
-  priority?: 'auto' | 'high' | 'low'
-}
+import { siteName } from '@/utilities/siteName'
+import { cn } from '@/utilities/ui'
 
-export const Logo = (props: Props) => {
-  const { loading: loadingFromProps, priority: priorityFromProps, className } = props
-
-  const loading = loadingFromProps || 'lazy'
-  const priority = priorityFromProps || 'low'
-
-  return (
-    <img
-      alt="Payload Logo"
-      width={193}
-      height={34}
-      loading={loading}
-      fetchPriority={priority}
-      decoding="async"
-      className={cn('max-w-[9.375rem] w-full h-[34px]', className)}
-      src="https://raw.githubusercontent.com/payloadcms/payload/main/packages/ui/src/assets/payload-logo-light.svg"
-    />
-  )
-}
+/**
+ * The site's mark and name. Inline SVG and text in the current colour, so it needs no request
+ * and works on light and dark backgrounds. Replace the mark with your own.
+ */
+export const Logo: React.FC<{ className?: string }> = ({ className }) => (
+  <span className={cn('inline-flex items-center gap-2 text-lg font-semibold', className)}>
+    <svg aria-hidden="true" className="size-7 shrink-0" fill="none" viewBox="0 0 28 28">
+      <rect fill="currentColor" height="28" rx="8" width="28" />
+      <path
+        className="text-background"
+        d="M8.5 11.5 14 8.5l5.5 3v5L14 19.5l-5.5-3v-5Zm0 0L14 14.5m0 0 5.5-3M14 14.5v5"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.75"
+      />
+    </svg>
+    <span className="tracking-[-0.02em]">{siteName}</span>
+  </span>
+)

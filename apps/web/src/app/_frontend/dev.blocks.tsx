@@ -54,7 +54,7 @@ function BlockGallery() {
     )
 
   return (
-    <main>
+    <div>
       <nav className="container flex flex-wrap gap-x-4 gap-y-2 border-b py-4 text-sm">
         <Link className="font-medium" search={{ background }} to="/dev/blocks">
           All blocks
@@ -92,6 +92,6 @@ function BlockGallery() {
           </div>
         ))
       })}
-    </main>
+    </div>
   )
 }

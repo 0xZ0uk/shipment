@@ -13,7 +13,7 @@ const IconTile: React.FC<{ className?: string; name?: string | null }> = ({ clas
   name ? (
     <div
       className={cn(
-        'flex shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary',
+        'flex shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand',
         className,
       )}
     >

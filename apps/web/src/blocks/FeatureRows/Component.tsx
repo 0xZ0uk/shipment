@@ -43,9 +43,9 @@ export const FeatureRowsBlock: React.FC<FeatureRowsBlockProps> = ({
                   resource={row.media}
                 />
                 <div className="flex max-w-xl flex-col items-start gap-4">
-                  {row.eyebrow && <p className="text-sm font-medium text-primary">{row.eyebrow}</p>}
+                  {row.eyebrow && <p className="text-sm font-medium text-brand">{row.eyebrow}</p>}
                   {row.title && (
-                    <h3 className="text-2xl font-semibold tracking-tight text-balance md:text-3xl">
+                    <h3 className="text-2xl leading-tight font-medium tracking-[-0.02em] text-balance md:text-3xl">
                       {row.title}
                     </h3>
                   )}

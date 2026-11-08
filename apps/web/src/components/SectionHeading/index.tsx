@@ -18,27 +18,45 @@ export const SectionHeading: React.FC<{
 }> = ({ align = 'center', as: Heading = 'h2', className, description, eyebrow, title }) => {
   if (!eyebrow && !title && !description) return null
 
+  const hero = Heading === 'h1'
+
   return (
     <div
       className={cn(
-        'flex max-w-2xl flex-col gap-3',
+        'flex max-w-2xl flex-col gap-4',
         align === 'center' && 'mx-auto items-center text-center',
         className,
       )}
     >
-      {eyebrow && <p className="text-sm font-medium text-primary">{eyebrow}</p>}
+      {eyebrow &&
+        (hero ? (
+          // The hero's eyebrow is a pill, like an announcement.
+          <p className="inline-flex items-center gap-2 rounded-full border bg-background py-1 pr-3 pl-2 text-sm font-medium text-foreground shadow-xs">
+            <span aria-hidden="true" className="size-1.5 rounded-full bg-brand" />
+            <span>{eyebrow}</span>
+          </p>
+        ) : (
+          <p className="text-sm font-medium text-brand">{eyebrow}</p>
+        ))}
       {title && (
         <Heading
           className={cn(
-            'font-semibold tracking-tight text-balance',
-            Heading === 'h1' ? 'text-4xl md:text-6xl' : 'text-3xl md:text-4xl',
+            'text-balance',
+            hero
+              ? 'text-4xl leading-[1.05] font-semibold tracking-[-0.035em] sm:text-5xl md:text-7xl'
+              : 'text-3xl leading-[1.1] font-medium tracking-[-0.03em] sm:text-4xl md:text-5xl',
           )}
         >
           {title}
         </Heading>
       )}
       {description && (
-        <p className="text-lg text-pretty whitespace-pre-line text-muted-foreground">
+        <p
+          className={cn(
+            'text-pretty whitespace-pre-line text-muted-foreground',
+            hero ? 'max-w-2xl text-lg md:text-xl' : 'max-w-xl text-lg',
+          )}
+        >
           {description}
         </p>
       )}
