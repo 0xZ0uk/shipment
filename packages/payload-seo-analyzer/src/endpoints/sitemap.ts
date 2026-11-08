@@ -10,6 +10,7 @@ import { buildDocPath } from '../helpers/docUrl.js'
 import { requestOrigin, resolveSiteUrl } from '../helpers/siteUrl.js'
 import { buildSelect } from '../helpers/buildSelect.js'
 import { docExclusion } from '../helpers/excludeDocs.js'
+import { isListedDoc } from '../helpers/searchText.js'
 import { fetchAllDocs } from '../helpers/fetchAllDocs.js'
 import { defaultSeoSharedCache, safeLookup, safeSet, type SeoSharedCache } from '../cache.js'
 import { keyFor } from '../cacheKey.js'
@@ -146,13 +147,11 @@ export function createSitemapHandler(
       const urls: SitemapUrl[] = []
 
       for (const { doc, sourceSlug: collectionSlug } of allDocs) {
-        // Skip drafts
-        if (doc._status === 'draft') continue
-        // Skip documents the editor explicitly removed from indexing. sitemap.xml is a
-        // PUBLIC, anonymous endpoint built with overrideAccess: true — without this filter
+        // Skip drafts and documents the editor explicitly removed from indexing. sitemap.xml
+        // is a PUBLIC, anonymous endpoint built with overrideAccess: true — without this filter
         // it published the URLs of noindex pages (post-purchase thank-you, private pricing,
         // test landing pages) and contradicted /llms.txt, which already honours the flag.
-        if (doc.noindex === true || doc?.meta?.noindex === true) continue
+        if (!isListedDoc(doc)) continue
 
         const slug: string = doc.slug || ''
 

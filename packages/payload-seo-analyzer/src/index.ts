@@ -72,6 +72,10 @@ export { buildSeoInputFromDoc } from './helpers/seoInputFromDoc.js'
 export { extractBlocksContent } from './helpers/blockContent.js'
 export type { BlocksContent } from './helpers/blockContent.js'
 export { extractDocBlocks } from './helpers/contentExtractor.js'
+
+// Site search: the sitemap's per-document filter and a document's plain text, for an app's index
+export { isListedDoc, searchTextFromDoc } from './helpers/searchText.js'
+export type { DocSearchText } from './helpers/searchText.js'
 export type {
   SeoContentExtractor,
   SeoContentExtractorArgs,
