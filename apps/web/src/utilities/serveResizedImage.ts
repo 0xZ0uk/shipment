@@ -47,6 +47,7 @@ const toOriginal = (filename: string, version: string | null) =>
  * - Keys that don't look like an upload's are a 404 (`IMAGE_KEY_PATTERN`): the bucket also holds
  *   the SEO analyzer's cache under `seo-analyzer/cache/`. Every `media` file is public.
  * - Non-images are a 415. SVG and GIF (vector, often animated) redirect to the original.
+ * - A key with no R2 object redirects to the original too (see below).
  * - Without the binding (the Node dev server, which keeps uploads in `media/`), or when the
  *   transform fails (a corrupt file, the Free plan's monthly limit), it redirects to the original,
  *   uncached, so the page still shows the image.
@@ -90,7 +91,10 @@ export const serveResizedImage = async (
   if (!bucket || !images) return toOriginal(filename, version)
 
   const object = await bucket.get(key)
-  if (!object) return text('Not Found', 404)
+  // A `<source>` the browser picked doesn't fall back to the `<img>` when it fails, so a miss
+  // (a key this route derives differently, cached HTML naming a replaced upload) goes to the
+  // original rather than breaking the image. If the file is really gone, Payload's route 404s.
+  if (!object) return toOriginal(filename, version)
 
   const contentType = object.httpMetadata?.contentType ?? ''
   if (!isResizableImage(contentType)) {

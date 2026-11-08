@@ -254,9 +254,15 @@ describe('/img/* route', () => {
     ['an encoded slash', `/img/${objectKey}%2Fharbour.jpg?f=webp&w=640`],
     ['a folder that is not an object key', '/img/uploads/harbour.jpg?f=webp&w=640'],
     ['a dot segment', `/img/${objectKey}/..?f=webp&w=640`],
-    ['a missing file', '/img/missing.jpg?f=webp&w=640'],
   ])('answers 404 for %s', async (_, path) => {
     expect((await get(path, fakeBindings(objects).bindings)).status).toBe(404)
+  })
+
+  it('redirects a key with no R2 object to the original, uncached', async () => {
+    const response = await get(`/img/missing.jpg?f=webp&w=640&v=${v}`, fakeBindings(objects).bindings)
+    expect(response.status).toBe(307)
+    expect(response.headers.get('Location')).toBe(`/api/media/file/missing.jpg?${v}`)
+    expect(response.headers.get('Cache-Control')).toBe('no-store')
   })
 
   it('refuses non-images', async () => {
