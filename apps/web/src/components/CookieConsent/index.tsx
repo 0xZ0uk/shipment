@@ -47,6 +47,8 @@ export const useConsent = () => useContext(ConsentContext)
 
 type GaWindow = Record<`ga-disable-${string}`, boolean | undefined>
 
+const BANNER_SELECTOR = '[data-test="cookie-banner"]'
+
 /**
  * Holds the visitor's analytics consent (GA4 in Basic mode: nothing from Google loads before
  * "Accept") and renders the banner. The choice lives in a first-party cookie
@@ -78,16 +80,21 @@ export function ConsentProvider({
     setReady(true)
   }, [])
 
-  const close = useCallback(() => {
-    setOpen(false)
+  // Runs while the banner is still mounted (from its click and key handlers): focus inside it
+  // would be lost with the banner, so it goes back to the trigger, else to the main content.
+  const restoreFocus = useCallback(() => {
     const trigger = returnFocus.current
     returnFocus.current = null
-    // Focus would otherwise be lost with the button that had it.
+    const active = document.activeElement
+    const lost = !active || active === document.body || active.closest(BANNER_SELECTOR)
     if (trigger?.isConnected) trigger.focus()
-    else if (document.activeElement === document.body || !document.activeElement) {
-      document.getElementById('content')?.focus({ preventScroll: true })
-    }
+    else if (lost) document.getElementById('content')?.focus({ preventScroll: true })
   }, [])
+
+  const close = useCallback(() => {
+    setOpen(false)
+    restoreFocus()
+  }, [restoreFocus])
 
   const choose = useCallback(
     (next: ConsentChoice) => {
@@ -131,7 +138,10 @@ export function ConsentProvider({
           onAccept={() => choose('granted')}
           onDismiss={() => {
             if (open) close()
-            else setDismissed(true)
+            else {
+              setDismissed(true)
+              restoreFocus()
+            }
           }}
           onReject={() => choose('denied')}
         />

@@ -252,6 +252,25 @@ describe('banner', () => {
     expect((window as unknown as Record<string, unknown>)[`ga-disable-${ID}`]).toBe(true)
   })
 
+  it('moves focus to the content when a first-visit choice removes the focused button', async () => {
+    await mount(<Tree />)
+    button('Reject')!.focus()
+    await act(async () => button('Reject')!.click())
+    expect(banner()).toBeNull()
+    expect(document.activeElement?.id).toBe('content')
+  })
+
+  it('moves focus to the content when Escape hides the first-visit banner', async () => {
+    await mount(<Tree />)
+    button('Reject')!.focus()
+    await act(async () => {
+      banner()!.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Escape' }))
+    })
+    expect(banner()).toBeNull()
+    expect(document.activeElement?.id).toBe('content')
+    expect(readConsent(document.cookie)).toBeNull()
+  })
+
   it('reopens from the footer, takes focus, and closes on Escape', async () => {
     document.cookie = 'cookie_consent=denied; Path=/'
     await mount(<Tree />)
