@@ -259,6 +259,29 @@ In development you can skip auth with `http://localhost:3000/api/mcp?overrideAcc
 
 **Tests.** `tests/e2e/assistant.e2e.spec.ts` sends a message, approves and rejects an update to a draft page, rewrites a paragraph of a Rich text block from Markdown, asks from a page's edit view (approve, the form shows the change, saving keeps it) and from a tag with unsaved edits (asked first, keep editing, then reload). It needs no key: `playwright.config.ts` starts the dev server with `ASSISTANT_TEST_MODEL=1`, which turns on the plugin's scripted test model. Only requests to `localhost` use it, and `APP_ENV=production` or `staging` ignores the flag, so a deployed Worker always uses OpenRouter.
 
+### Email
+
+Payload sends forgot-password emails, and the SEO analyzer's alerts digest sends to `SEO_ALERT_EMAIL`, through `payload.sendEmail`. [`src/email.ts`](./src/email.ts) picks the transport from what is configured:
+
+1. **Cloudflare Email Service**, when `wrangler.jsonc` declares a `send_email` binding named `EMAIL`. No API key. It can send to any address once the sender's domain is onboarded to Email Sending, which needs the [Workers Paid plan](https://developers.cloudflare.com/email-service/platform/pricing/) (3,000 emails a month included, then $0.35 per 1,000). On the Free plan, or before onboarding, it only reaches [verified destination addresses](https://developers.cloudflare.com/email-service/platform/limits/#verified-destination-addresses) in the account.
+2. **[Resend](https://resend.com)**, when `RESEND_API_KEY` is set and there is no `EMAIL` binding. It uses the stock `@payloadcms/email-resend` adapter, which calls Resend's HTTP API with `fetch`.
+3. **Neither:** Payload's console adapter logs each email, reset links included, and sends nothing. That's the default, so local dev and CI need no setup. The SEO digest counts its email channel as not delivered in this mode.
+
+Both transports send from `EMAIL_FROM_ADDRESS`, which must be an address on the domain you onboarded or verified. The sender name is `EMAIL_FROM_NAME`, or the site name if that's unset. If a transport is configured but `EMAIL_FROM_ADDRESS` isn't, the Worker still starts, but every send fails with an error that names the variable. The address isn't a secret and is usually the same in every environment, so you can set it once as the default in `.env.schema`. Otherwise set it in each `.env.[APP_ENV].local`. If you leave it out of development while declaring the binding, `pnpm dev` fails sends instead of logging them.
+
+**Cloudflare Email Service setup.** The binding isn't declared by default. The deploy has to work on any plan and before a domain is onboarded, and Email Sending has neither guarantee. Do these steps per Worker (production, then `env.staging`):
+
+1. Onboard the sending domain (it has to use Cloudflare DNS): in the dashboard, open **Compute > Email Service > Email Sending > Onboard Domain**, or run `pnpm wrangler email sending enable example.com`. Onboarding adds SPF, DKIM and DMARC records on the `cf-bounce` subdomain.
+2. Add `"send_email": [{ "name": "EMAIL" }]` to `wrangler.jsonc`, both at the top level and in `env.staging`, because environments don't inherit bindings. Then run `pnpm cf-typegen`.
+3. Set `EMAIL_FROM_ADDRESS`, for example `no-reply@example.com`, on the onboarded domain.
+4. Deploy (`pnpm run deploy`, or `pnpm run deploy:staging`). Then use **Forgot password?** on `/admin/login` with a real account and check that the email arrives and its link resets the password. If something fails, the error code shows up in the Worker's logs. `E_SENDER_DOMAIN_NOT_AVAILABLE` or `E_SENDER_NOT_VERIFIED` means the domain isn't onboarded or the address is on a different domain. `E_RECIPIENT_NOT_ALLOWED` means the account can't send to arbitrary recipients yet.
+
+Under `pnpm dev`, Wrangler's proxy simulates a declared binding: it logs the email and doesn't send it.
+
+**Resend setup.** Verify the domain in Resend, then create an API key with sending access to it. Set `RESEND_API_KEY` (it's `@sensitive`, so it's uploaded as a Worker secret) and `EMAIL_FROM_ADDRESS` in `.env.production.local` and `.env.staging.local`, or in CI. Leave the `EMAIL` binding out: when the binding is declared, it wins over Resend.
+
+The Cloudflare adapter maps Payload's Nodemailer-style message (`from`, `to`, `cc`, `bcc`, `replyTo`, `subject`, `html`, `text`) to the binding's `send()`. Attachments aren't supported yet and throw. `tests/int/email.int.spec.ts` covers both transports with a fake binding and a stubbed `fetch`. `tests/int/api.int.spec.ts` checks that the app falls back to the console adapter.
+
 ### Current limitations
 
 - No cropping or focal points on Workers (no `sharp`); resizing goes through Cloudflare Images (see [Images](#images)).
