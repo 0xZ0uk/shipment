@@ -25,4 +25,9 @@ describe('wrangler.jsonc', () => {
     expect(dataset()).toBe('shipment_assistant_audit')
     expect(dataset('staging')).toBe('shipment_assistant_audit_staging')
   })
+
+  it('binds Cloudflare Images as IMAGES in every environment (resized uploads, #163)', () => {
+    expect(read().images).toEqual({ binding: 'IMAGES' })
+    expect(read('staging').images).toEqual({ binding: 'IMAGES' })
+  })
 })
