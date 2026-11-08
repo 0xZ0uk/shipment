@@ -19,23 +19,36 @@ import { loadMergedConfig } from '../helpers/loadMergedConfig.js'
 import { analyzeLoadedDocument, type DocumentTarget } from '../helpers/analyzeDocument.js'
 import { isSeoAdminRequest, isSeoPanelUser } from '../helpers/isAdmin.js'
 
+/** The document fields the audit row reads (the analysis itself takes the whole document). */
+interface AuditDoc {
+  id?: number | string
+  title?: string
+  slug?: string
+  meta?: { title?: string; description?: string; image?: unknown }
+  focusKeyword?: string
+  focusKeywords?: Array<{ keyword?: string }>
+  _status?: string
+  updatedAt?: string
+  isCornerstone?: boolean
+  contentLastReviewed?: string
+}
+
 function analyzeDoc(
   payload: Payload,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  doc: any,
+  rawDoc: Record<string, unknown>,
   target: DocumentTarget,
   mergedConfig: SeoConfig,
 ) {
+  const doc = rawDoc as AuditDoc
   // The real engine, minus the weight-0, non-scoring groups (geo/eeat/hreflang): they do
   // recursive Lexical walks per block and only matter for single-doc analysis (sidebar).
   // Same SEO score, less per-doc CPU and memory on the site-wide audit (low-memory hosts).
-  const { analysis } = analyzeLoadedDocument(payload, doc, target, { purpose: 'audit', config: mergedConfig })
+  const { analysis } = analyzeLoadedDocument(payload, rawDoc, target, { purpose: 'audit', config: mergedConfig })
   const { stats } = analysis
   const collection = 'global' in target ? `global:${target.global}` : target.collection
 
   const focusKeywordsArr: string[] = Array.isArray(doc.focusKeywords)
-    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      doc.focusKeywords.map((k: any) => k.keyword || '').filter(Boolean)
+    ? doc.focusKeywords.map((k) => k.keyword || '').filter(Boolean)
     : []
 
   return {
@@ -284,7 +297,7 @@ async function finalizeAudit(
           id: globalSlug,
           collection: `global:${globalSlug}`,
           slug: '',
-          title: (doc as any).title || globalSlug,
+          title: (doc as { title?: string }).title || globalSlug,
         })
       }
     } catch {

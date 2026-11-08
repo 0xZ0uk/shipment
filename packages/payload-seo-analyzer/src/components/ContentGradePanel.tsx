@@ -77,11 +77,13 @@ export function ContentGradePanel() {
     try {
       const res = await fetch(seoApi('/audit'), { credentials: 'include', cache: 'no-store' })
       const json = await res.json()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const results: any[] = Array.isArray(json.results) ? json.results : []
+      const results: Array<Partial<PageOption> | null> = Array.isArray(json.results) ? json.results : []
       setPages(
         results
-          .filter((r) => r && r.id != null && r.collection && !String(r.collection).startsWith('global:'))
+          .filter(
+            (r): r is Partial<PageOption> & Pick<PageOption, 'id' | 'collection'> =>
+              !!r && r.id != null && !!r.collection && !String(r.collection).startsWith('global:'),
+          )
           .map((r) => ({ id: r.id, collection: r.collection, title: r.title || r.slug || String(r.id), slug: r.slug || '' })),
       )
     } catch {

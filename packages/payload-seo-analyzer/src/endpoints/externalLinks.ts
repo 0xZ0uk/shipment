@@ -120,16 +120,16 @@ function extractExternalLinks(node: unknown): string[] {
 // ---------------------------------------------------------------------------
 
 export function extractDocExternalLinks(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  doc: any,
+  doc: Record<string, unknown>,
   siteUrl?: string,
   options: { collection?: string; extractors?: ContentExtractorSource } = {},
 ): string[] {
   const allLinks: string[] = []
+  const { hero, content } = doc as { hero?: { richText?: unknown } | null; content?: unknown }
 
   // Hero richText
-  if (doc.hero?.richText) {
-    allLinks.push(...extractExternalLinks(doc.hero.richText))
+  if (hero?.richText) {
+    allLinks.push(...extractExternalLinks(hero.richText))
   }
 
   // Layout blocks: every Lexical value, `link` / `links` field and plain-URL link, by shape
@@ -140,8 +140,8 @@ export function extractDocExternalLinks(
   }
 
   // Post content (Lexical richText)
-  if (doc.content && typeof doc.content === 'object' && !Array.isArray(doc.content)) {
-    allLinks.push(...extractExternalLinks(doc.content))
+  if (content && typeof content === 'object' && !Array.isArray(content)) {
+    allLinks.push(...extractExternalLinks(content))
   }
 
   // Filter out the site's own domain if provided
@@ -228,10 +228,9 @@ export function createExternalLinksHandler(
       })
 
       for (const { doc, sourceType, sourceSlug } of allFetched) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const d = doc as any
+        const d = doc as { slug?: string; title?: string }
         const collectionLabel = sourceType === 'global' ? `global:${sourceSlug}` : sourceSlug
-        const links = extractDocExternalLinks(d, siteUrl, {
+        const links = extractDocExternalLinks(doc, siteUrl, {
           collection: sourceType === 'global' ? undefined : sourceSlug,
           extractors: req.payload,
         })

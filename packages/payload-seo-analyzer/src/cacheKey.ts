@@ -88,8 +88,13 @@ export type CacheKeyBase = keyof typeof CACHE_KEY_POLICY
 /** The slice of a request `keyFor` reads: the locale and, for the extractors, the Payload config. */
 export interface CacheKeyReq {
   locale?: unknown
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  payload?: any
+  /** Structural, so a mock request (no config) type-checks: only what the key reads. */
+  payload?: {
+    config?: {
+      custom?: Record<string, unknown>
+      localization?: false | { localeCodes?: unknown } | null
+    }
+  } | null
 }
 
 export interface CacheKeyOptions {

@@ -307,8 +307,7 @@ export function createLinkGraphHandler(
       const noCache = url.searchParams.get('nocache') === '1' && isSeoAdminRequest(req)
 
       const CACHE_KEY = await keyFor('link-graph', req)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const cached = noCache ? null : seoCache.get<any>(CACHE_KEY)
+      const cached = noCache ? null : seoCache.get<Record<string, unknown>>(CACHE_KEY)
       if (cached) {
         return Response.json({ ...cached, cached: true }, { headers: { 'Cache-Control': 'no-store' } })
       }
@@ -337,8 +336,7 @@ export function createLinkGraphHandler(
           await new Promise<void>((resolve) => setImmediate(resolve))
         }
         processed++
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const d = doc as any
+        const d = doc as { id?: number | string; slug?: string; title?: string; noindex?: boolean; meta?: { noindex?: boolean } }
 
         const isGlobal = sourceType === 'global'
         const nodeId = isGlobal ? `global:${sourceSlug}` : ((d.slug as string) || '')
@@ -346,7 +344,7 @@ export function createLinkGraphHandler(
         const collectionLabel = isGlobal ? `global:${sourceSlug}` : sourceSlug
 
         slugMap.set(nodeId, {
-          id: isGlobal ? sourceSlug : d.id,
+          id: isGlobal ? sourceSlug : (d.id as number | string),
           title,
           slug: nodeId,
           collection: collectionLabel,
@@ -355,7 +353,7 @@ export function createLinkGraphHandler(
         })
 
         // Extract internal links and deduplicate by target slug
-        const internalLinks = extractAllInternalLinks(d, {
+        const internalLinks = extractAllInternalLinks(doc, {
           collection: isGlobal ? undefined : sourceSlug,
           extractors: req.payload,
         })

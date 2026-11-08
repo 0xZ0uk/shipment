@@ -18,7 +18,7 @@
  *
  * @returns the path to redirect to, or `null` when the caller may render the view.
  */
-import { isSeoPanelUser } from './isAdmin.js'
+import { isSeoPanelUser, type SeoAdminRequest } from './isAdmin.js'
 
 /** Join the admin root with a sub-route without ever producing `//…` (a protocol-relative URL). */
 function adminPath(root: string, sub: string): string {
@@ -28,12 +28,14 @@ function adminPath(root: string, sub: string): string {
   return joined.startsWith('//') ? path : joined
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function seoViewRedirectTarget(initPageResult: any): string | null {
+/** What the redirect decision reads of Payload's `initPageResult`: partial, since it fails closed on anything missing. */
+export type SeoViewInitPageResult = { req?: SeoAdminRequest } | null | undefined
+
+export function seoViewRedirectTarget(initPageResult: SeoViewInitPageResult): string | null {
   const req = initPageResult?.req
   const config = req?.payload?.config
   const root = typeof config?.routes?.admin === 'string' ? config.routes.admin : '/admin'
-  const routes = config?.admin?.routes ?? {}
+  const routes: { login?: unknown; unauthorized?: unknown } = config?.admin?.routes ?? {}
   const login = typeof routes.login === 'string' ? routes.login : '/login'
   const unauthorized = typeof routes.unauthorized === 'string' ? routes.unauthorized : '/unauthorized'
 

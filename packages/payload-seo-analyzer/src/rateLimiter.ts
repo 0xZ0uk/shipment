@@ -163,8 +163,7 @@ export function getClientIp(req: { headers: Headers }): string {
  */
 export function rateLimitKey(req: {
   headers: Headers
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  user?: any
+  user?: unknown
 }): string {
   const user = req?.user as { id?: string | number; collection?: string } | undefined | null
   const id = user?.id

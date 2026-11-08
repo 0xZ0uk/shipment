@@ -22,8 +22,11 @@ import './PerformanceView.css'
 // Risk is mitigated because parsing happens entirely in the browser (no server-side usage).
 // The xlsx package is an optional peerDependency — users must install it separately
 // to enable XLSX import functionality.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type XLSXModule = any
+/** The slice of SheetJS this view calls (the package is an optional peer, so it has no types here). */
+type XLSXModule = {
+  read(data: Uint8Array, options: { type: 'array' }): { SheetNames: string[]; Sheets: Record<string, unknown> }
+  utils: { sheet_to_json(sheet: unknown): unknown[] }
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -210,12 +213,19 @@ export function PerformanceView() {
           const workbook = xlsxMod.read(data, { type: 'array' })
 
           const todayISO = new Date().toISOString().split('T')[0]
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const allEntries: any[] = []
+          const allEntries: Array<{
+            url: string
+            query: string | undefined
+            clicks: number
+            impressions: number
+            ctr: number
+            position: number
+            date: string
+          }> = []
 
           for (const sheetName of workbook.SheetNames) {
             const sheet = workbook.Sheets[sheetName]
-            const rows = xlsxMod.utils.sheet_to_json(sheet) as Record<string, any>[]
+            const rows = xlsxMod.utils.sheet_to_json(sheet) as Record<string, unknown>[]
 
             for (const row of rows) {
               // Normalize header keys to lowercase

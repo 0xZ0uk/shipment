@@ -24,8 +24,7 @@ export function createRobotsHandler(targetCollections: string[], seoConfig?: Seo
         limit: 1,
         overrideAccess: true,
       })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const config = settings.docs[0] as Record<string, any> | undefined
+      const config = settings.docs[0] as { robotsCustomRules?: unknown } | undefined
 
       // Without a configured site URL, fall back to the request's origin: a relative
       // `Sitemap:` line is invalid.

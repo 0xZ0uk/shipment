@@ -4,8 +4,9 @@
  * `/validate`, `/sidebar-content`, the audit, score history).
  */
 
+import type { Payload } from 'payload'
 import type { SeoConfig } from '../types.js'
-import { mergeSavedSettings } from './seoConfig.js'
+import { mergeSavedSettings, type SavedSeoSettings } from './seoConfig.js'
 
 export interface MergedConfigResult {
   config: SeoConfig
@@ -17,8 +18,7 @@ export interface MergedConfigResult {
  * Returns the merged config and a list of ignored slugs (from settings).
  */
 export async function loadMergedConfig(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  payload: any,
+  payload: Payload,
   pluginConfig?: SeoConfig,
 ): Promise<MergedConfigResult> {
   let ignoredSlugs: string[] = []
@@ -33,10 +33,11 @@ export async function loadMergedConfig(
     const settings = settingsResult.docs?.[0]
     if (settings) {
       if (Array.isArray(settings.ignoredSlugs)) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ignoredSlugs = settings.ignoredSlugs.map((s: any) => s.slug || s).filter(Boolean)
+        ignoredSlugs = (settings.ignoredSlugs as Array<string | { slug?: string }>)
+          .map((s) => (typeof s === 'string' ? s : s.slug) || s)
+          .filter(Boolean) as string[]
       }
-      mergedConfig = mergeSavedSettings(mergedConfig, settings)
+      mergedConfig = mergeSavedSettings(mergedConfig, settings as SavedSeoSettings)
     }
   } catch {
     // SeoSettings collection might not exist yet — use plugin config as-is

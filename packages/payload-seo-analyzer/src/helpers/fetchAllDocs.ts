@@ -9,8 +9,8 @@ import { isExcludedDoc, withExclusionSelect, type DocExclusion } from './exclude
 export type DocSourceType = 'collection' | 'global'
 
 export interface FetchedDoc {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  doc: any
+  /** The document as Payload returned it; the host's schema is unknown, so fields are `unknown`. */
+  doc: Record<string, unknown>
   sourceType: DocSourceType
   sourceSlug: string
 }

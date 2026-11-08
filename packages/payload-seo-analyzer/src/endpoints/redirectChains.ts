@@ -52,8 +52,7 @@ export function createRedirectChainsHandler(
         })
 
         for (const doc of result.docs) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const d = doc as any
+          const d = doc as { from?: string; to?: string }
           if (d.from && d.to) {
             allRedirects.push({ from: d.from, to: d.to })
           }
