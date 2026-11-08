@@ -62,6 +62,12 @@
       "bucket_name": "shipment-media",
     },
   ],
+  // Cloudflare Images, for the responsive variants of uploads (`/img/*`, src/app/img.$.ts):
+  // resizes and re-encodes originals read from R2. Billed per unique transformation per month
+  // (5,000 free); see README > Images. Local dev uses Wrangler's offline, low-fidelity version.
+  "images": {
+    "binding": "IMAGES",
+  },
   // Rate limits for the SEO analyzer's endpoints, shared by every isolate in a Cloudflare
   // location (the plugin's own limiters are per isolate). Limits mirror `SEO_RATE_LIMITS`
   // in the plugin; see src/plugins/seoRateLimit.ts. `namespace_id` is account-wide: give
@@ -164,6 +170,7 @@
         { "binding": "ASSISTANT_AUDIT", "dataset": "shipment_assistant_audit_staging" },
       ],
       "r2_buckets": [{ "binding": "R2", "bucket_name": "shipment-media-staging" }],
+      "images": { "binding": "IMAGES" },
       // Same limits as production, on their own counters (namespace ids are account-wide).
       "ratelimits": [
         {

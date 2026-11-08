@@ -18,6 +18,7 @@ import { Route as DotwellKnownSplatRouteImport } from './app/[.]well-known.$'
 import { Route as FrontendIndexRouteImport } from './app/_frontend/index'
 import { Route as FrontendSplatRouteImport } from './app/_frontend/$'
 import { Route as FrontendSlugRouteImport } from './app/_frontend/$slug'
+import { Route as ImgSplatRouteImport } from './app/img.$'
 import { Route as FrontendDevBlocksRouteImport } from './app/_frontend/dev.blocks'
 import { Route as PayloadAdminIndexRouteImport } from './app/_payload/admin.index'
 import { Route as PayloadAdminSplatRouteImport } from './app/_payload/admin.$'
@@ -66,6 +67,11 @@ const FrontendSlugRoute = FrontendSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => FrontendRoute,
 } as any)
+const ImgSplatRoute = ImgSplatRouteImport.update({
+  id: '/img/$',
+  path: '/img/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FrontendDevBlocksRoute = FrontendDevBlocksRouteImport.update({
   id: '/dev/blocks',
   path: '/dev/blocks',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/$': typeof FrontendSplatRoute
   '/$slug': typeof FrontendSlugRoute
+  '/img/$': typeof ImgSplatRoute
   '/dev/blocks': typeof FrontendDevBlocksRoute
   '/admin/$': typeof PayloadAdminSplatRoute
   '/api/$': typeof PayloadApiSplatRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/$': typeof FrontendSplatRoute
   '/$slug': typeof FrontendSlugRoute
+  '/img/$': typeof ImgSplatRoute
   '/dev/blocks': typeof FrontendDevBlocksRoute
   '/admin/$': typeof PayloadAdminSplatRoute
   '/api/$': typeof PayloadApiSplatRoute
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/.well-known/$': typeof DotwellKnownSplatRoute
   '/_frontend/$': typeof FrontendSplatRoute
   '/_frontend/$slug': typeof FrontendSlugRoute
+  '/img/$': typeof ImgSplatRoute
   '/_frontend/': typeof FrontendIndexRoute
   '/_frontend/dev/blocks': typeof FrontendDevBlocksRoute
   '/_payload/admin/$': typeof PayloadAdminSplatRoute
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
     | '/.well-known/$'
     | '/$'
     | '/$slug'
+    | '/img/$'
     | '/dev/blocks'
     | '/admin/$'
     | '/api/$'
@@ -152,6 +162,7 @@ export interface FileRouteTypes {
     | '/.well-known/$'
     | '/$'
     | '/$slug'
+    | '/img/$'
     | '/dev/blocks'
     | '/admin/$'
     | '/api/$'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/.well-known/$'
     | '/_frontend/$'
     | '/_frontend/$slug'
+    | '/img/$'
     | '/_frontend/'
     | '/_frontend/dev/blocks'
     | '/_payload/admin/$'
@@ -180,6 +192,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
+  ImgSplatRoute: typeof ImgSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -246,6 +259,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$slug'
       preLoaderRoute: typeof FrontendSlugRouteImport
       parentRoute: typeof FrontendRoute
+    }
+    '/img/$': {
+      id: '/img/$'
+      path: '/img/$'
+      fullPath: '/img/$'
+      preLoaderRoute: typeof ImgSplatRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_frontend/dev/blocks': {
       id: '/_frontend/dev/blocks'
@@ -318,6 +338,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   DotwellKnownSplatRoute: DotwellKnownSplatRoute,
+  ImgSplatRoute: ImgSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
