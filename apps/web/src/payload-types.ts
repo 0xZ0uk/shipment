@@ -2679,6 +2679,30 @@ export interface Footer {
         id?: string | null;
       }[]
     | null;
+  /**
+   * The cookie banner, shown before Google Analytics loads (only when GA_MEASUREMENT_ID is set). Empty fields use the default text.
+   */
+  cookieConsent?: {
+    title?: string | null;
+    description?: string | null;
+    acceptLabel?: string | null;
+    rejectLabel?: string | null;
+    /**
+     * The footer link that reopens the banner.
+     */
+    settingsLabel?: string | null;
+    enablePrivacyLink?: boolean | null;
+    privacyLink?: {
+      type?: ('reference' | 'custom') | null;
+      newTab?: boolean | null;
+      reference?: {
+        relationTo: 'pages';
+        value: number | Page;
+      } | null;
+      url?: string | null;
+      label: string;
+    };
+  };
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -2957,6 +2981,25 @@ export interface FooterSelect<T extends boolean = true> {
               label?: T;
             };
         id?: T;
+      };
+  cookieConsent?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        acceptLabel?: T;
+        rejectLabel?: T;
+        settingsLabel?: T;
+        enablePrivacyLink?: T;
+        privacyLink?:
+          | T
+          | {
+              type?: T;
+              newTab?: T;
+              reference?: T;
+              url?: T;
+              label?: T;
+            };
       };
   createdBy?: T;
   updatedBy?: T;

@@ -12,9 +12,9 @@ test.describe('Frontend', () => {
     await expect(heading).toHaveText('Shipment')
   })
 
-  test('loads no Google Analytics without GA_MEASUREMENT_ID', async ({ page }) => {
-    test.skip(Boolean(process.env.GA_MEASUREMENT_ID), 'GA4 is enabled in this environment')
-
+  // With or without GA_MEASUREMENT_ID: gtag.js loads only after the visitor accepts the cookie
+  // banner (cookie-consent.e2e.spec.ts), and these specs start with analytics refused.
+  test('loads no Google Analytics without consent', async ({ page }) => {
     const googleRequests: string[] = []
     page.on('request', (request) => {
       if (/googletagmanager\.com|google-analytics\.com/.test(request.url())) {
@@ -27,7 +27,6 @@ test.describe('Frontend', () => {
 
     expect(googleRequests).toEqual([])
     await expect(page.locator('script[src*="googletagmanager"]')).toHaveCount(0)
-    expect(await page.evaluate(() => 'gtag' in window)).toBe(false)
   })
 
   test('renders the header and footer', async ({ page }) => {
