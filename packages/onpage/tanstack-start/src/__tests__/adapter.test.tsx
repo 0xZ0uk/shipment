@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { act, render, renderHook, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 
 const nav = vi.hoisted(() => ({
   invalidate: vi.fn(async () => {}),
@@ -18,6 +18,7 @@ vi.mock('@tanstack/react-router', () => ({
     },
   }),
   useLocation: () => ({ pathname: nav.pathname, searchStr: nav.searchStr }),
+  retainSearchParams: (keys: string[]) => ({ retains: keys }),
 }))
 const getOnPageState = vi.fn()
 vi.mock('../state.functions.ts', () => ({ getOnPageState }))
@@ -25,6 +26,15 @@ vi.mock('../state.functions.ts', () => ({ getOnPageState }))
 const { useTanstackRefresh } = await import('../refresh.ts')
 const { OnPage } = await import('../index.tsx')
 const { TanstackPreview } = await import('../editor.tsx')
+const { retainOnPageMarker, validateOnPageSearch } = await import('../search.ts')
+
+/** Stub `location` for one test: a URL plus a spy on `replace`. */
+function stubLocation(href: string) {
+  const replace = vi.fn()
+  const url = new URL(href)
+  vi.stubGlobal('location', { href: url.href, pathname: url.pathname, search: url.search, replace })
+  return replace
+}
 
 beforeEach(() => {
   nav.invalidate.mockReset()
@@ -69,6 +79,10 @@ describe('<OnPage>', () => {
 
   it('with the hint cookie, resolves state and mounts with mode and shared flag', async () => {
     document.cookie = 'onpage_hint=1'
+    stubLocation('http://site.test/?_onpage=1')
+    onTestFinished(() => {
+      vi.unstubAllGlobals()
+    })
     getOnPageState.mockResolvedValue({ mode: 'view', shared: true })
     const Mount = vi.fn(() => null)
     render(<OnPage mount={Mount} apiRoute="/api" />)
@@ -79,6 +93,37 @@ describe('<OnPage>', () => {
       expect.objectContaining({ mode: 'view', shared: true, apiRoute: '/api' }),
       undefined,
     )
+  })
+
+  it.each([
+    { mode: 'edit', shared: false },
+    { mode: 'view', shared: false },
+    { mode: null, shared: true },
+  ])('moves $mode/$shared to the marked URL when it lacks the marker', async (state) => {
+    document.cookie = 'onpage_hint=1'
+    const replace = stubLocation('http://site.test/about?tab=2#faq')
+    onTestFinished(() => {
+      vi.unstubAllGlobals()
+    })
+    getOnPageState.mockResolvedValue(state)
+    const Mount = vi.fn(() => null)
+    render(<OnPage mount={Mount} />)
+    await act(async () => {})
+    expect(replace).toHaveBeenCalledWith('http://site.test/about?tab=2&_onpage=1#faq')
+    expect(Mount).not.toHaveBeenCalled()
+  })
+
+  it('leaves the URL alone when the hint is stale (no mode, no grant)', async () => {
+    document.cookie = 'onpage_hint=1'
+    const replace = stubLocation('http://site.test/about')
+    onTestFinished(() => {
+      vi.unstubAllGlobals()
+    })
+    getOnPageState.mockResolvedValue({ mode: null, shared: false })
+    render(<OnPage />)
+    await act(async () => {})
+    expect(replace).not.toHaveBeenCalled()
+    expect(document.body.textContent).toBe('')
   })
 
   it('a failed lookup renders nothing', async () => {
@@ -126,5 +171,17 @@ describe('TanstackPreview', () => {
     } finally {
       vi.unstubAllGlobals()
     }
+  })
+})
+
+describe('router search helpers', () => {
+  it('validateOnPageSearch keeps only the marker, normalized', () => {
+    expect(validateOnPageSearch({})).toEqual({})
+    expect(validateOnPageSearch({ draft: 'true' })).toEqual({})
+    expect(validateOnPageSearch({ _onpage: '1' })).toEqual({ _onpage: '1' })
+    expect(validateOnPageSearch({ _onpage: 1 })).toEqual({ _onpage: '1' })
+  })
+  it('retainOnPageMarker retains the marker key', () => {
+    expect(retainOnPageMarker).toEqual({ retains: ['_onpage'] })
   })
 })

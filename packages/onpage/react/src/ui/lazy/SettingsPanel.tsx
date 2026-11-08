@@ -23,6 +23,7 @@ import {
   resolveRow,
   type ArrayField,
   type RefKey,
+  withMarker,
 } from '@shipment/onpage-core'
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type RefObject } from 'react'
 import { useOnPage } from '../../context.tsx'
@@ -422,7 +423,8 @@ function PageActions() {
       const made = await make()
       if (!made?.path) throw new Error(t('pages.noPath'))
       notify(t('notify.pageCreated'))
-      window.location.assign(made.path)
+      // Still editing: the new page opens at its marked (uncached) URL.
+      window.location.assign(withMarker(made.path))
     } catch (e) {
       notify(errorText(e), true)
       setBusy(false)

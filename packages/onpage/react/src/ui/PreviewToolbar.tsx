@@ -38,7 +38,13 @@ function useGuestComments(href: string | undefined): boolean {
     if (!href) return
     let live = true
     fetch(`${href}/guest`, { credentials: 'same-origin' })
-      .then((r) => (r.ok ? (r.json() as Promise<{ enabled?: unknown }>) : { enabled: false }))
+      .then((r) => {
+        if (r.ok) return r.json() as Promise<{ enabled?: unknown }>
+        // Read or cancel every body: Chrome keeps an unread `no-store` response
+        // open, which never lets the page go network-idle.
+        void r.body?.cancel().catch(() => undefined)
+        return { enabled: false }
+      })
       .then(
         (j) => live && setEnabled(j.enabled === true),
         () => undefined,

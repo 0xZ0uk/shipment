@@ -1,6 +1,7 @@
 import { createCsrfMiddleware, createMiddleware, createStart } from '@tanstack/react-start'
 
 import { withMediaCacheControl } from '@/utilities/mediaCacheControl'
+import { withOnPageNoStore } from '@/utilities/onpageNoStore'
 import { MEDIA_FILE_ROUTE } from '@/utilities/responsiveImage'
 import { trailingSlashTarget } from '@/utilities/trailingSlash'
 
@@ -17,6 +18,12 @@ const trailingSlashMiddleware = createMiddleware({ type: 'request' }).server(({ 
   return new Response(null, { headers: { Location: target }, status: 308 })
 })
 
+/** No shared cache may store a response to a marked (`?_onpage=1`) URL; see withOnPageNoStore. */
+const onpageNoStoreMiddleware = createMiddleware({ type: 'request' }).server(async ({ next, request }) => {
+  const result = await next()
+  return { ...result, response: withOnPageNoStore(request, result.response) }
+})
+
 /** Public, long-lived `Cache-Control` on media files (`/api/media/file/*`); see withMediaCacheControl. */
 const mediaCacheMiddleware = createMiddleware({ type: 'request' }).server(async ({ next, pathname, request }) => {
   if (!pathname.startsWith(MEDIA_FILE_ROUTE)) return next()
@@ -30,6 +37,8 @@ export const startInstance = createStart(() => ({
     // exactly this CSRF check on server-function calls. Keep it.
     createCsrfMiddleware({ filter: (ctx) => ctx.handlerType === 'serverFn' }),
     trailingSlashMiddleware,
+    // Before (so around) every middleware that sets Cache-Control: it has the last word.
+    onpageNoStoreMiddleware,
     mediaCacheMiddleware,
   ],
 }))

@@ -31,6 +31,8 @@ import {
   type PreviewGrant,
   type SealSecret,
   type SessionAdapter,
+  withMarker,
+  withoutMarker,
 } from '@shipment/onpage-core'
 import {
   addDataAndFileToRequest,
@@ -255,7 +257,8 @@ export function createEndpoints(ctx: EndpointContext): Endpoint[] {
       if (!path) return text('This document has no page to open', 404)
       const mode = q.get('mode')
       await session.enable(isOnPageMode(mode) ? mode : 'edit', enableOptions(req, options))
-      return redirectTo(req, path)
+      // The marker gives the editor's pages their own URL, apart from any cached published page.
+      return redirectTo(req, withMarker(path))
     },
   }
 
@@ -271,7 +274,7 @@ export function createEndpoints(ctx: EndpointContext): Endpoint[] {
       const q = req.searchParams
       const next = q.get('mode')
       await session.enable(isOnPageMode(next) ? next : 'edit', enableOptions(req, options))
-      return redirectTo(req, q.get('path'))
+      return redirectTo(req, withMarker(safePath(q.get('path')) ?? '/'))
     },
   }
 
@@ -283,7 +286,8 @@ export function createEndpoints(ctx: EndpointContext): Endpoint[] {
       if (refused) return refused
       const path = safePath(req.searchParams.get('path'))
       await session.disable(path ? { path: pathnameOf(path) } : undefined)
-      return redirectTo(req, path)
+      // Back to the plain URL, so the published page (and any cached copy) is served again.
+      return redirectTo(req, path ? withoutMarker(path) : '/')
     },
   }
 
@@ -362,7 +366,7 @@ export function createEndpoints(ctx: EndpointContext): Endpoint[] {
           return seal(grant, secret, SEAL_PURPOSE.previewCookie)
         },
       })
-      return redirectTo(req, token.path, 307)
+      return redirectTo(req, withMarker(token.path), 307)
     },
   }
 

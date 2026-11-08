@@ -8,7 +8,8 @@
 
 - Edit and preview turn on draft reads site-wide for that editor (Next draft mode on Next.js; the session's mode cookie on Start). The mode cookie is sealed with the plugin secret and bound to their auth cookie, so it can't be hand-made, and signing out or switching user ends it. It lasts 12 hours by default (`nextSession({ maxAge })` / `tanstackSession({ maxAge })`).
 - Share links never give the browser a draft credential. The grant opens the shared path only — via the proxy on Next.js, via per-read verification on Start — until it expires. See [security](security.md).
-- **Exit** clears everything (`POST /api/onpage/exit`).
+- While any of these is on, page URLs carry the marker `?_onpage=1`, so a cache keyed by URL never serves the published page in their place. It only keys the cache: it grants nothing (see [getting started](../getting-started-tanstack.md#3-mount-the-editor)).
+- **Exit** clears everything (`POST /api/onpage/exit`) and returns to the unmarked URL.
 
 A share link shows one page's draft, read-only, to anyone with the link:
 
