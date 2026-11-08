@@ -7,7 +7,13 @@ import type { LayoutBlock } from '@/blocks/components'
 import { collectArchiveBlocks } from '@/components/Posts/archiveBlocks'
 import type { PostSummary } from '@/components/Posts/types'
 import { isPublicPageView, POSTS_TAG, publicPageHeaders } from '@/utilities/cacheControl'
-import { defaultLocale, type Locale, localizePath } from '@/i18n/locales'
+import {
+  defaultLocale,
+  type Locale,
+  type LocaleView,
+  localeView,
+  localizePath,
+} from '@/i18n/locales'
 import { gaMeasurementIdFor } from '@/utilities/googleAnalytics'
 import { pagePath } from '@/utilities/pagePath'
 
@@ -18,7 +24,7 @@ type LoadPageInput = {
   slug: string
 }
 
-export type LoadPageResult = {
+export type LoadPageResult = LocaleView & {
   /**
    * The slug the page's canonical URL, `og:url` and JSON-LD are built from: the slug that was
    * requested, never that of an A/B variant served in its place, and the original's slug when
@@ -41,18 +47,6 @@ export type LoadPageResult = {
   redirectTo?: string
   /** The public origin (`SITE_URL`, else the request origin) for canonical URLs. */
   siteUrl: string
-  /** The locale the page was asked for in (its URL's), whatever its content fell back to. */
-  locale: Locale
-  /**
-   * The locales the page is translated into (`translatedLocales`): its hreflang alternates and
-   * the switcher's targets. The default locale only, with one locale.
-   */
-  translations: Locale[]
-  /**
-   * True when the page has no translation in `locale` and shows the default locale's content:
-   * its canonical is then the default-locale URL, it's `noindex`, and it has no hreflang.
-   */
-  fallback: boolean
   /**
    * The A/B experiment this view is part of (its manifest key, the page's path), or null. The
    * page then reports CTA clicks as conversions; the bucket stays in the visitor's cookies.
@@ -199,15 +193,12 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
           return {
             canonicalSlug: original,
             draft,
-            fallback: false,
             jsonLd: [],
             livePreview: false,
-            locale,
             origin,
             page: null,
             redirectTo: localizePath(pagePath(original), locale),
             siteUrl,
-            translations: [],
           }
         }
         canonicalSlug = original
@@ -284,16 +275,20 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
       canonicalSlug,
       draft,
       experiment: page ? experiment : null,
-      fallback: page != null && fallback,
       gaMeasurementId: page ? gaMeasurementId : null,
       jsonLd,
       livePreview: Boolean(user) && Boolean(data.draft),
-      locale,
       origin,
       page,
       postsArchive,
       siteUrl,
-      translations: page ? translations : [],
+      // The locale the URL asked for; the locales the page is published in (its hreflang
+      // alternates); whether it shows the default locale's content (canonical there, `noindex`).
+      ...localeView({
+        fallback: page != null && fallback,
+        locale,
+        translations: page ? translations : [],
+      }),
     }
   })
 

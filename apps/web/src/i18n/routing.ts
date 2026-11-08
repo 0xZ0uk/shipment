@@ -58,6 +58,16 @@ export const validateLocaleSearch = (
   return isLocale(value, config) && value !== config.defaultLocale ? { locale: value } : {}
 }
 
+/**
+ * `loaderDeps` for a route whose only dependency is the locale: none at all for the default
+ * locale (the router hashes `undefined` deps as '', typed or not), so its route data is what it
+ * was before localization. Routes with other deps list `search.locale` beside them instead, which
+ * JSON leaves out when it's undefined. Typed as an object (the router wants one): read it as
+ * `deps?.locale`.
+ */
+export const localeDeps = (search: { locale?: Locale }) =>
+  (search.locale ? { locale: search.locale } : undefined) as { locale?: Locale }
+
 /** The locale a frontend route renders in, from its validated search. */
 export const localeOf = (
   search: { locale?: Locale },

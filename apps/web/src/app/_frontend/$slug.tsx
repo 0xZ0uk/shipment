@@ -2,7 +2,7 @@ import { createFileRoute, notFound, redirect } from '@tanstack/react-router'
 
 import { preloadBlocks } from '@/blocks/components'
 import { NotFound } from '@/components/NotFound'
-import { localeOf, publicSearchStr } from '@/i18n/routing'
+import { publicSearchStr } from '@/i18n/routing'
 import { PageTemplate } from '@/components/PageTemplate'
 import { ContentLanguage } from '@/i18n/ContentLanguage'
 import { pageHead } from '@/utilities/pageHead'
@@ -19,7 +19,7 @@ export const Route = createFileRoute('/_frontend/$slug')({
       throw redirect({ search, statusCode: 301, to: '/' })
     }
   },
-  loaderDeps: ({ search }) => ({ draft: search.draft, locale: localeOf(search) }),
+  loaderDeps: ({ search }) => ({ draft: search.draft, locale: search.locale }),
   loader: async ({ deps, location, params }) => {
     const data = await loadPage({
       data: { draft: deps.draft, locale: deps.locale, slug: params.slug },

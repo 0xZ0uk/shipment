@@ -6,13 +6,19 @@ import {
   languageTag,
   localeConfig,
   localeLabel,
+  localeView,
   localizeHref,
   localizePath,
   ogLocale,
   parseLocales,
   splitLocalePath,
 } from '@/i18n/locales'
-import { localeRewrite, publicSearchStr, validateLocaleSearch } from '@/i18n/routing'
+import {
+  localeDeps,
+  localeRewrite,
+  publicSearchStr,
+  validateLocaleSearch,
+} from '@/i18n/routing'
 import { publicPageHeaders } from '@/utilities/cacheControl'
 import { pageHead } from '@/utilities/pageHead'
 import { pagePath } from '@/utilities/pagePath'
@@ -42,6 +48,13 @@ describe('LOCALES', () => {
   it('is single-locale by default', () => {
     expect(localeConfig).toEqual({ defaultLocale: 'en', locales: ['en'] })
     expect(isMultilingual).toBe(false)
+  })
+
+  it("keeps the single-locale site's route data as it was: no locale fields, no deps", () => {
+    expect(localeView({ fallback: false, locale: 'en', translations: ['en'] })).toEqual({})
+    // The router hashes undefined deps as '' (no `{}` in match ids), as before localization.
+    expect(localeDeps({})).toBeUndefined()
+    expect(localeDeps({ locale: 'pt' })).toEqual({ locale: 'pt' })
   })
 
   it('names locales in their own language, with BCP 47 and Open Graph tags', () => {

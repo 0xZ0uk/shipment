@@ -132,5 +132,18 @@ export const splitLocalePath = (
   return { locale: config.defaultLocale, path: pathname }
 }
 
+/**
+ * A view's locale fields, as `loadPage` and the blog loaders return them: the locale the URL
+ * asked for, the locales the document is published in (every locale for an archive), and whether
+ * it shows the default locale's content for want of a translation. Absent with one locale, so the
+ * single-locale site's route data (and its HTML) is what it was before localization; read them
+ * with the defaults (`locale ?? defaultLocale`, `translations ?? [defaultLocale]`).
+ */
+export type LocaleView = { locale?: Locale; translations?: Locale[]; fallback?: boolean }
+
+/** `view` with several locales, nothing with one (see `LocaleView`). */
+export const localeView = (view: Required<LocaleView>): LocaleView =>
+  isMultilingual ? view : {}
+
 /** The search param the router carries the locale in internally (src/i18n/routing.ts). */
 export const LOCALE_PARAM = 'locale'

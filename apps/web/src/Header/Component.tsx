@@ -5,6 +5,7 @@ import type { Header as HeaderType } from '@/payload-types'
 
 import { LocaleSwitcher } from '@/components/LocaleSwitcher'
 import { Logo } from '@/components/Logo/Logo'
+import { isMultilingual } from '@/i18n/locales'
 import { SiteSearch } from '@/components/SiteSearch'
 import { siteName } from '@/utilities/siteName'
 import { HeaderNav } from './Nav'
@@ -31,8 +32,15 @@ export const Header: React.FC<HeaderProps> = ({ data }) => {
         </Link>
         <div className="flex items-center gap-2 md:gap-8">
           <SiteSearch />
-          <LocaleSwitcher />
-          <HeaderNav data={data} />
+          {/* With one locale, exactly the markup (and React ids) of before localization. */}
+          {isMultilingual ? (
+            <>
+              <LocaleSwitcher />
+              <HeaderNav data={data} />
+            </>
+          ) : (
+            <HeaderNav data={data} />
+          )}
         </div>
       </div>
     </header>

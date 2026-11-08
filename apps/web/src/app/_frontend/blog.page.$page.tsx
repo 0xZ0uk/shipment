@@ -2,7 +2,7 @@ import { createFileRoute, notFound, redirect } from '@tanstack/react-router'
 
 import { NotFound } from '@/components/NotFound'
 import { BlogArchive } from '@/components/Posts/BlogArchive'
-import { localeOf } from '@/i18n/routing'
+import { localeDeps } from '@/i18n/routing'
 import { archiveHead } from '@/utilities/blogHead'
 import { parseArchivePage } from '@/utilities/postPath'
 
@@ -16,10 +16,12 @@ export const Route = createFileRoute('/_frontend/blog/page/$page')({
     if (page === null) throw notFound()
     if (page === 1) throw redirect({ statusCode: 301, to: '/blog' })
   },
-  loaderDeps: ({ search }) => ({ locale: localeOf(search) }),
+  loaderDeps: ({ search }) => localeDeps(search),
   loader: async ({ deps, location, params }) => {
-    const data = await loadPostArchive({ data: { locale: deps.locale, page: Number(params.page) } })
-    if (!data.found) await redirectOrNotFound(location, deps.locale)
+    const data = await loadPostArchive({
+      data: { locale: deps?.locale, page: Number(params.page) },
+    })
+    if (!data.found) await redirectOrNotFound(location, deps?.locale)
     return data
   },
   head: ({ loaderData }) => archiveHead(loaderData),

@@ -1,7 +1,7 @@
 import type { LoadArchiveResult, LoadPostResult } from '@/app/_frontend/blog.functions'
 
 import { localeHead } from '@/i18n/head'
-import { localizePath } from '@/i18n/locales'
+import { defaultLocale, localizePath } from '@/i18n/locales'
 
 import { absoluteMediaURL, type HeadResult, headTags } from './pageHead'
 import { archivePagePath, postPath } from './postPath'
@@ -15,10 +15,10 @@ export const postHead = (data?: LoadPostResult): HeadResult => {
   const published = post.publishedAt || undefined
   const locale = localeHead({
     fallback: data.fallback,
-    locale: data.locale,
+    locale: data.locale ?? defaultLocale,
     path: postPath(post.slug),
     siteUrl: data.siteUrl,
-    translations: data.translations,
+    translations: data.translations ?? [defaultLocale],
   })
   return headTags({
     description: post.meta?.description || post.excerpt,
@@ -53,10 +53,10 @@ export const archiveHead = (data?: LoadArchiveResult): HeadResult => {
   const url = (page: number) =>
     `${data.siteUrl}${localizePath(archivePagePath(data.basePath, page), data.locale)}`
   const locale = localeHead({
-    locale: data.locale,
+    locale: data.locale ?? defaultLocale,
     path: archivePagePath(data.basePath, data.page),
     siteUrl: data.siteUrl,
-    translations: data.translations,
+    translations: data.translations ?? [defaultLocale],
   })
   return headTags({
     description:

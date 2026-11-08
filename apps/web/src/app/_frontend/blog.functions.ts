@@ -3,7 +3,7 @@ import type { RequiredDataFromCollectionSlug } from 'payload'
 import { createServerFn } from '@tanstack/react-start'
 
 import type { PostSummary } from '@/components/Posts/types'
-import { defaultLocale, type Locale } from '@/i18n/locales'
+import { defaultLocale, type Locale, type LocaleView, localeView } from '@/i18n/locales'
 import type { Category } from '@/payload-types'
 import {
   archivePageTags,
@@ -63,17 +63,7 @@ type LoadPostInput = {
   slug: string
 }
 
-/** The locale fields every blog loader returns (see `LoadPageResult`). */
-export type LocaleResult = {
-  /** The locale the URL asked for. */
-  locale: Locale
-  /** The locales the document is translated into; every locale for an archive. */
-  translations: Locale[]
-  /** No translation in `locale`: the default locale's content, canonical there, `noindex`. */
-  fallback: boolean
-}
-
-export type LoadPostResult = LocaleResult & {
+export type LoadPostResult = LocaleView & {
   /** True when the draft is shown (live preview, on-page editing or a preview link). */
   draft: boolean
   /** The admin's live preview (`?draft=true` from a signed-in user). */
@@ -170,14 +160,12 @@ export const loadPost = createServerFn({ method: 'GET', strict: { output: false 
 
     return {
       draft,
-      fallback,
       gaMeasurementId: post ? site.gaMeasurementId : null,
       jsonLd,
       livePreview: Boolean(user) && Boolean(data.draft),
-      locale,
       post,
       siteUrl: site.siteUrl,
-      translations: post ? translations : [],
+      ...localeView({ fallback, locale, translations: post ? translations : [] }),
     }
   })
 
@@ -190,7 +178,7 @@ type LoadArchiveInput = {
   category?: string
 }
 
-export type LoadArchiveResult = LocaleResult & {
+export type LoadArchiveResult = LocaleView & {
   /** False for an unknown category or a page past the last: the route answers 404. */
   found: boolean
   category: Pick<Category, 'description' | 'id' | 'slug' | 'title'> | null
@@ -224,7 +212,7 @@ export const loadPostArchive = createServerFn({ method: 'GET', strict: { output:
     const { locales } = await import('@/i18n/locales')
     const locale = requestLocale(data.locale)
     // A listing exists in every locale (its posts fall back one by one), so it's never a fallback.
-    const localeResult: LocaleResult = { fallback: false, locale, translations: [...locales] }
+    const localeResult = localeView({ fallback: false, locale, translations: [...locales] })
 
     let category: LoadArchiveResult['category'] = null
     if (data.category !== undefined) {

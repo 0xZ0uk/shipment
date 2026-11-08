@@ -6,7 +6,7 @@ import { ResultExcerpt } from '@/components/SiteSearch/ResultText'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { localizePath } from '@/i18n/locales'
-import { localeOf, useLocale } from '@/i18n/routing'
+import { useLocale } from '@/i18n/routing'
 import { MAX_QUERY_LENGTH } from '@/search/matchQuery'
 import { siteName } from '@/utilities/siteName'
 
@@ -25,7 +25,7 @@ const validateSearch = (search: Record<string, unknown>): { q?: string } => {
  */
 export const Route = createFileRoute('/_frontend/search')({
   validateSearch,
-  loaderDeps: ({ search }) => ({ locale: localeOf(search), q: search.q ?? '' }),
+  loaderDeps: ({ search }) => ({ locale: search.locale, q: search.q ?? '' }),
   loader: ({ deps }) => searchSite({ data: { locale: deps.locale, q: deps.q } }),
   head: ({ loaderData }) => ({
     meta: [

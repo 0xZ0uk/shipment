@@ -1,5 +1,6 @@
 import type { LoadPageResult } from '@/app/_frontend/pages.functions'
 import { localeHead } from '@/i18n/head'
+import { defaultLocale } from '@/i18n/locales'
 
 import { gtagScripts } from './googleAnalytics'
 import { pagePath } from './pagePath'
@@ -93,10 +94,10 @@ export const pageHead = (data?: LoadPageResult): HeadResult => {
 
   const locale = localeHead({
     fallback: data.fallback,
-    locale: data.locale,
+    locale: data.locale ?? defaultLocale,
     path: pagePath(data.canonicalSlug),
     siteUrl: data.siteUrl,
-    translations: data.translations,
+    translations: data.translations ?? [defaultLocale],
   })
 
   return headTags({

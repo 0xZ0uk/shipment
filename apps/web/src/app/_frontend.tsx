@@ -8,7 +8,7 @@ import { NotFound } from '@/components/NotFound'
 import { Footer } from '@/Footer/Component'
 import { Header } from '@/Header/Component'
 import { type Locale, localizePath } from '@/i18n/locales'
-import { localeOf, useLocale, validateLocaleSearch } from '@/i18n/routing'
+import { localeDeps, useLocale, validateLocaleSearch } from '@/i18n/routing'
 import { BLOG_FEED_PATH } from '@/utilities/postPath'
 import { siteName } from '@/utilities/siteName'
 
@@ -45,10 +45,10 @@ export const Route = createFileRoute('/_frontend')({
   // `/about?locale=pt`); kept on every link and navigation, so they stay in it.
   validateSearch: validateFrontendSearch,
   search: { middlewares: [retainOnPageMarker, retainSearchParams<FrontendSearch>(['locale'])] },
-  loaderDeps: ({ search }) => ({ locale: localeOf(search) }),
+  loaderDeps: ({ search }) => localeDeps(search),
   loader: async ({ deps }) => ({
-    ...(await loadLayout({ data: { locale: deps.locale } })),
-    locale: deps.locale,
+    ...(await loadLayout({ data: { locale: deps?.locale } })),
+    ...(deps?.locale ? { locale: deps.locale } : {}),
   }),
   // Every full page load fetches the header and footer fresh; client-side navigation reuses
   // them instead of querying D1 again.
