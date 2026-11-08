@@ -28,6 +28,15 @@ import {
 
 // Cookie consent (Basic mode): nothing from Google loads before "Accept", and the choice is
 // client state only, so the server's HTML is the same for every visitor (edge-cacheable).
+// Counts renders of the page's blocks: a consent change must not re-render them (see below).
+const blockRenders = vi.hoisted(() => ({ count: 0 }))
+vi.mock('@/blocks/RenderBlocks', () => ({
+  RenderBlocks: () => {
+    blockRenders.count++
+    return null
+  },
+}))
+
 vi.mock('@shipment/payload-plugin-ab/analytics', () => ({
   ExperimentTracker: ({ experimentId }: { experimentId: string }) => (
     <i data-test="experiment-tracker" data-experiment={experimentId} />
@@ -310,4 +319,14 @@ describe('banner', () => {
     expect((window as unknown as Record<string, unknown>)[`ga-disable-${ID}`]).toBe(true)
     expect(container.querySelector('[data-test="experiment-tracker"]')).toBeNull()
   })
+  it("doesn't re-render the page's blocks when the stored choice is read after hydration", async () => {
+    // Re-rendering them while lazily loaded blocks are still hydrating makes React discard their
+    // server HTML and render them again on the client.
+    document.cookie = 'cookie_consent=granted; Path=/'
+    blockRenders.count = 0
+    await mount(<Tree />)
+    expect(container.querySelector('[data-test="experiment-tracker"]')).not.toBeNull()
+    expect(blockRenders.count).toBe(1)
+  })
+
 })

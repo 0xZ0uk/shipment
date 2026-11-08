@@ -22,8 +22,6 @@ export const PageTemplate: React.FC<{
   page: NonNullable<LoadPageResult['page']>
 }> = ({ draft, experiment, gaMeasurementId, livePreview, page }) => {
   const { layout } = page
-  // Read on the client only (after hydration): the server renders the same HTML for everyone.
-  const { choice } = useConsent()
 
   return (
     <article data-test="payload-ui-barrel-sentinel">
@@ -31,19 +29,40 @@ export const PageTemplate: React.FC<{
           the route once on mount. */}
       {livePreview && <LivePreviewListener />}
       {experiment && !draft && <AbConversionTracker experiment={experiment} />}
-      {/* GA4, once the visitor accepts the cookie banner (head: `gtagScripts`, a stub). The
-          tracker sets the experiment's dimensions before the config call, so the first page
-          view carries them. Neither renders without the id or consent. */}
-      {gaMeasurementId && !draft && choice === 'granted' && (
-        <>
-          {experiment && <ExperimentTracker experimentId={experiment} />}
-          <GoogleAnalyticsConfig measurementId={gaMeasurementId} />
-        </>
+      {gaMeasurementId && !draft && (
+        <ConsentedAnalytics experiment={experiment} measurementId={gaMeasurementId} />
       )}
 
       <DraftModeProvider draft={draft}>
         <RenderBlocks blocks={layout} />
       </DraftModeProvider>
     </article>
+  )
+}
+
+/**
+ * GA4, once the visitor accepts the cookie banner (head: `gtagScripts`, a stub). The tracker sets
+ * the experiment's dimensions before the config call, so the first page view carries them.
+ *
+ * Its own component so that only it reads the consent context: the choice is read from the
+ * cookie right after hydration, and if `PageTemplate` re-rendered then, so would `RenderBlocks`,
+ * and React would throw away the server HTML of every lazily loaded block still hydrating and
+ * render it again on the client (losing anything typed into it).
+ */
+function ConsentedAnalytics({
+  experiment,
+  measurementId,
+}: {
+  experiment?: string | null
+  measurementId: string
+}) {
+  // Read on the client only (after hydration): the server renders the same HTML for everyone.
+  const { choice } = useConsent()
+  if (choice !== 'granted') return null
+  return (
+    <>
+      {experiment && <ExperimentTracker experimentId={experiment} />}
+      <GoogleAnalyticsConfig measurementId={measurementId} />
+    </>
   )
 }
