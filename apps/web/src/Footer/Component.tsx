@@ -5,22 +5,38 @@ import type { Footer as FooterType } from '@/payload-types'
 
 import { CMSLink } from '@/components/Link'
 import { Logo } from '@/components/Logo/Logo'
+import { siteName } from '@/utilities/siteName'
+
+const focusRing =
+  'rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
 
 export const Footer: React.FC<{ data: FooterType }> = ({ data }) => {
-  const navItems = data?.navItems || []
+  const navItems = (data?.navItems || []).filter(({ link }) => link)
 
   return (
-    <footer className="mt-auto border-t border-border bg-black dark:bg-card text-white">
-      <div className="container py-8 gap-8 flex flex-col md:flex-row md:justify-between">
-        <Link className="flex items-center" to="/">
+    <footer className="mt-auto border-t">
+      <div className="container flex flex-col gap-10 py-12 md:flex-row md:items-start md:justify-between">
+        <Link aria-label={`${siteName} home`} className={`self-start ${focusRing}`} to="/">
           <Logo />
         </Link>
 
-        <nav className="flex flex-col md:flex-row gap-4">
-          {navItems.map(({ link }, i) => {
-            return <CMSLink className="text-white" key={i} {...link} />
-          })}
-        </nav>
+        {navItems.length > 0 && (
+          <nav aria-label="Footer">
+            <ul className="flex flex-col gap-3 md:flex-row md:flex-wrap md:gap-x-8">
+              {navItems.map(({ id, link }, i) => (
+                <li key={id ?? i}>
+                  <CMSLink
+                    {...link}
+                    className={`text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground ${focusRing}`}
+                  />
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+      </div>
+      <div className="container border-t py-6 text-sm text-muted-foreground">
+        © {new Date().getFullYear()} {siteName}
       </div>
     </footer>
   )

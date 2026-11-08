@@ -28,8 +28,17 @@ function FrontendLayout() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      {/* First focusable element: keyboard users skip the header's links. */}
+      <a
+        className="fixed top-3 left-3 z-50 -translate-y-20 rounded-md bg-background px-4 py-2 text-sm font-medium shadow-md outline-none focus:translate-y-0 focus:ring-2 focus:ring-ring"
+        href="#content"
+      >
+        Skip to content
+      </a>
       <Header data={header} />
-      <Outlet />
+      <main className="flex-1 outline-none" id="content" tabIndex={-1}>
+        <Outlet />
+      </main>
       <Footer data={footer} />
       {/* The on-page editor, or the shared-preview bar. Renders nothing and sends no requests
           unless an editor pressed "Edit on page" or opened a preview link. */}

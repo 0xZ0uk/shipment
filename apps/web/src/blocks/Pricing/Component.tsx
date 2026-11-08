@@ -27,7 +27,9 @@ const PlanHeader: React.FC<{ plan: Plan }> = ({ plan }) => (
   <CardHeader className="gap-3">
     <div className="flex items-center justify-between gap-3">
       <h3 className="text-lg font-semibold">{plan.name}</h3>
-      {plan.highlighted && plan.badge && <Badge>{plan.badge}</Badge>}
+      {plan.highlighted && plan.badge && (
+        <Badge className="bg-brand text-brand-foreground">{plan.badge}</Badge>
+      )}
     </div>
     {(plan.price || plan.period) && (
       <p className="flex flex-wrap items-baseline gap-x-1">
@@ -53,7 +55,7 @@ const PlanFeatures: React.FC<{ className?: string; features: Plan['features'] }>
     <ul className={cn('flex flex-col gap-3 text-sm', className)}>
       {features.map(({ id, feature }, index) => (
         <li className="flex items-start gap-3" key={id ?? index}>
-          <Icon className="mt-0.5 size-4 shrink-0 text-primary" name="check" strokeWidth={2.5} />
+          <Icon className="mt-0.5 size-4 shrink-0 text-brand" name="check" strokeWidth={2.5} />
           <span>{feature}</span>
         </li>
       ))}
@@ -77,7 +79,7 @@ const PlanAction: React.FC<{ plan: Plan }> = ({ plan }) => {
 }
 
 const cardClasses = (plan: Plan) =>
-  cn('h-full [--card-spacing:--spacing(6)]', plan.highlighted && 'ring-2 ring-primary')
+  cn('h-full [--card-spacing:--spacing(6)]', plan.highlighted && 'ring-2 ring-brand')
 
 export const PricingBlock: React.FC<PricingBlockProps> = ({
   description,

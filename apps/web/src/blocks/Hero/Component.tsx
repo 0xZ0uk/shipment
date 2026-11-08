@@ -23,7 +23,6 @@ const HeroLinks: React.FC<{ className?: string; links?: Links | null }> = ({
           key={id ?? index}
           {...link}
           appearance={link.appearance ?? 'default'}
-          className="h-11 rounded-xl px-5 text-base"
           size="lg"
         />
       ))}
@@ -95,7 +94,7 @@ export const HeroBlock: React.FC<HeroBlockProps> = ({
   return (
     <div className="container">
       <div className="flex flex-col items-center gap-8 text-center">
-        <SectionHeading {...heading} as="h1" className="max-w-3xl" />
+        <SectionHeading {...heading} as="h1" className="max-w-4xl" />
         <HeroLinks className="justify-center" links={links} />
       </div>
       {media && typeof media === 'object' && (

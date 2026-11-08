@@ -23,6 +23,7 @@ import { Sections } from './collections/Sections'
 import { blocks } from './blocks'
 import { Footer } from './Footer/config'
 import { Header } from './Header/config'
+import { seedHomeEndpoint } from './endpoints/seed'
 import { defaultLexical } from './fields/defaultLexical'
 import type { Page } from './payload-types'
 import { abMeasurementConfig } from './plugins/abMeasurement'
@@ -63,6 +64,8 @@ export default buildConfig({
   blocks,
   collections: [Pages, Sections, Users, Media, Folders, Tags],
   editor: defaultLexical,
+  // POST /api/seed/home: the template's landing page as the homepage (src/endpoints/seed).
+  endpoints: [seedHomeEndpoint],
   globals: [Header, Footer],
   secret,
   typescript: {

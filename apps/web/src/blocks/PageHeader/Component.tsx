@@ -44,7 +44,7 @@ export const PageHeaderBlock: React.FC<PageHeaderBlockProps> = ({
           </Breadcrumb>
         )}
         <div className={cn('flex max-w-3xl flex-col gap-4', centered && 'items-center')}>
-          {eyebrow && <p className="text-sm font-medium text-primary">{eyebrow}</p>}
+          {eyebrow && <p className="text-sm font-medium text-brand">{eyebrow}</p>}
           {title && (
             <h1 className="text-4xl font-semibold tracking-tight text-balance md:text-5xl">
               {title}

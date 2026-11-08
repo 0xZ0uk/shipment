@@ -44,11 +44,11 @@ const Cards: React.FC<{ items: Item[] }> = ({ items }) => (
           <CardContent className="flex flex-col gap-5">
             <div className="flex items-start justify-between gap-4">
               <StepNumber
-                className="text-5xl leading-none font-semibold tracking-tight text-primary"
+                className="text-5xl leading-none font-semibold tracking-tight text-brand tabular-nums"
                 index={index}
               />
               {item.icon && (
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
                   <Icon className="size-5" name={item.icon} />
                 </span>
               )}
@@ -83,7 +83,7 @@ const Timeline: React.FC<{ items: Item[] }> = ({ items }) => (
             />
           )}
           <div className="flex items-start gap-3 pt-2">
-            {item.icon && <Icon className="mt-0.5 size-5 shrink-0 text-primary" name={item.icon} />}
+            {item.icon && <Icon className="mt-0.5 size-5 shrink-0 text-brand" name={item.icon} />}
             {/* Title and description stack; the icon sits beside them. */}
             <div className="min-w-0">
               <StepText item={item} />
@@ -125,7 +125,7 @@ const Horizontal: React.FC<{ items: Item[] }> = ({ items }) => {
                 />
               )}
             </div>
-            {item.icon && <Icon className="mt-5 size-6 text-primary" name={item.icon} />}
+            {item.icon && <Icon className="mt-5 size-6 text-brand" name={item.icon} />}
             <div className={item.icon ? 'mt-3' : 'mt-5'}>
               <StepText item={item} />
             </div>

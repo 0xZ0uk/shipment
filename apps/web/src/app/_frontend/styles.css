@@ -1,6 +1,8 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+/* Inter with its optical-size axis: the Display cut at heading sizes, the Text cut for body. */
+@import '@fontsource-variable/inter/opsz.css';
 
 @config '../../../tailwind.config.mjs';
 
@@ -39,6 +41,10 @@
 @source inline("bg-warning/30");
 
 @theme {
+  --font-sans:
+    'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji';
+
   /* A track holding its content twice, shifted by half its width: a seamless loop (Logos). */
   --animate-marquee: marquee 40s linear infinite;
 
@@ -95,24 +101,29 @@
 }
 
 :root {
+  /* Cool neutrals (hue 264) and one blue accent, `--brand`. Measured pairs: foreground on
+     background 17.9:1, muted-foreground on background 5.2:1 and on muted 4.8:1, brand on
+     background 5.1:1, brand-foreground on brand 4.9:1. */
   --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --foreground: oklch(0.205 0.011 264);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.205 0.011 264);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.205 0.011 264);
+  --primary: oklch(0.205 0.011 264);
   --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.965 0.004 264);
+  --secondary-foreground: oklch(0.205 0.011 264);
+  --muted: oklch(0.975 0.003 264);
+  --muted-foreground: oklch(0.535 0.022 264);
+  --accent: oklch(0.965 0.004 264);
+  --accent-foreground: oklch(0.205 0.011 264);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: oklch(0.925 0.005 264);
+  --input: oklch(0.925 0.005 264);
+  --ring: oklch(0.555 0.235 266);
+  --brand: oklch(0.555 0.235 266);
+  --brand-foreground: oklch(0.985 0 0);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -135,24 +146,28 @@
 
 /* Payload's theme attribute, not shadcn's `.dark` class (see the `dark` variant above). */
 [data-theme='dark'] {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  /* Measured: foreground on background 18.1:1, muted-foreground on background 7.8:1 and on
+     card 7.2:1, brand on background 7.7:1 and on card 7.1:1. */
+  --background: oklch(0.16 0.008 264);
+  --foreground: oklch(0.975 0.003 264);
+  --card: oklch(0.205 0.01 264);
+  --card-foreground: oklch(0.975 0.003 264);
+  --popover: oklch(0.205 0.01 264);
+  --popover-foreground: oklch(0.975 0.003 264);
+  --primary: oklch(0.975 0.003 264);
+  --primary-foreground: oklch(0.205 0.011 264);
+  --secondary: oklch(0.255 0.01 264);
+  --secondary-foreground: oklch(0.975 0.003 264);
+  --muted: oklch(0.225 0.01 264);
+  --muted-foreground: oklch(0.72 0.018 264);
+  --accent: oklch(0.255 0.01 264);
+  --accent-foreground: oklch(0.975 0.003 264);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(0.72 0.125 266);
+  --brand: oklch(0.72 0.125 266);
+  --brand-foreground: oklch(0.16 0.008 264);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -190,6 +205,8 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -219,7 +236,11 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    /* Anchor jumps and focused elements land below the sticky header (Header/Component.tsx). */
+    scroll-padding-block-start: 5rem;
+  }
   body {
-    @apply bg-background text-foreground min-h-[100vh] flex flex-col;
+    @apply bg-background font-sans text-foreground antialiased min-h-[100vh] flex flex-col;
   }
 }

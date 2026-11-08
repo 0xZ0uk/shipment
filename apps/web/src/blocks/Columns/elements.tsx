@@ -76,7 +76,7 @@ const CardElement: React.FC<Extract<ColumnElement, { blockType: 'columnCard' }>>
     >
       <CardHeader className="gap-3 px-6">
         {icon && (
-          <span className="mb-1 flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <span className="mb-1 flex size-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
             <Icon className="size-5" name={icon} />
           </span>
         )}
