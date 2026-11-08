@@ -28,6 +28,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- Two publish jobs for the same existing post that ran at the same time could both claim it and post it twice (#144): the claim was Payload's Local API `update` with a `where`, which reads the matching row and then writes it by id. Every guarded `social-posts` status change (the publish task's claim, an immediate publish taking back a failed, cancelled, deleted or draft row, a reschedule, a cancel) is now one conditional `UPDATE … RETURNING` through the database adapter (`payload.db.updateOne` with `options.atomic`), so only one caller wins. A cancel racing the publish task's claim no longer answers `cancelled` for a post that then publishes. No schema change.
 - A reconciliation verdict is written only while the row keeps the status and `externalId` it was checked with, so a check that finishes after an operator deleted the post no longer overwrites `deleted`.
 - `queuePublicationReconciliation` swallowed a failed queue and left the post to the sweep, which (under `scheduling.autoRun`) never checked it. The ledger now sets the row's `nextRetryAt` before queueing the check, so a failed queue leaves the post due for the next sweep in every mode.
 - A custom adapter without `delete` no longer lets `DELETE /posts/{postId}` mark a live post deleted without removing it from the platform; it answers `422` unless `?localOnly=true`.

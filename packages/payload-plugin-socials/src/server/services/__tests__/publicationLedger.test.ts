@@ -75,9 +75,13 @@ afterAll(async () => {
 
 type Row = {
   attempts?: null | number
+  body?: null | string
+  destination?: null | Record<string, unknown>
+  destinationId?: null | string
   externalId?: null | string
   id: number | string
   lastError?: null | string
+  link?: null | string
   meta?: null | Record<string, unknown>
   nextRetryAt?: null | string
   platformPublicationStatus?: null | string
@@ -269,6 +273,30 @@ describe('publishNow (publish endpoint, composer)', () => {
     expect([a.status, b.status].sort()).toEqual(['fulfilled', 'rejected'])
     const rejected = [a, b].find((r) => r.status === 'rejected') as PromiseRejectedResult
     expect(rejected.reason).toMatchObject({ statusCode: 409 })
+  })
+
+  it('lets only one of two concurrent requests take back an existing row (#144)', async () => {
+    const ctx = nextCtx()
+    const { idempotencyKey } = buildPublicationIdentity({
+      ctx,
+      input,
+      platform: 'pinterest',
+      sourceId: ctx.sourceId,
+      sourceKind: ctx.sourceKind,
+    })
+    const existing = await createRow({ attempts: 1, idempotencyKey, status: 'failed' })
+    const { adapter, publish } = fakeAdapter(async () => published())
+
+    const [a, b] = await Promise.allSettled([
+      runPublishNow(ctx, adapter),
+      runPublishNow(ctx, adapter),
+    ])
+
+    expect(publish).toHaveBeenCalledOnce()
+    expect([a.status, b.status].sort()).toEqual(['fulfilled', 'rejected'])
+    const rejected = [a, b].find((r) => r.status === 'rejected') as PromiseRejectedResult
+    expect(rejected.reason).toMatchObject({ statusCode: 409 })
+    expect(await row(existing.id)).toMatchObject({ attempts: 2, status: 'published' })
   })
 
   it.each<[PostStatus, Record<string, unknown>]>([
@@ -582,13 +610,22 @@ describe('claimForPublish (publish task)', () => {
   })
 
   it('refuses a second claim once the first has taken the row', async () => {
-    // Sequential, not concurrent: Payload's conditional update reads and then
-    // writes, so two claims interleaved between those steps can both match
-    // (see the ledger's header). A first publish of new content is atomic
-    // through the unique idempotency key instead (see publishNow above).
     const post = await createRow({ status: 'queued' })
     expect(await claimForPublish(payload, post as never)).toBe(true)
     expect(await claimForPublish(payload, post as never)).toBe(false)
+  })
+
+  it('lets exactly one of two concurrent claims take the row (#144)', async () => {
+    // Both callers read the row as queued, then claim at once: the claim is one
+    // conditional UPDATE, so the second finds the row already publishing.
+    for (const status of ['queued', 'failed'] as const) {
+      const post = await createRow({ attempts: 1, status })
+      const claims = await Promise.all(
+        Array.from({ length: 4 }, () => claimForPublish(payload, post as never)),
+      )
+      expect(claims.filter(Boolean)).toHaveLength(1)
+      expect(await row(post.id)).toMatchObject({ attempts: 2, status: 'publishing' })
+    }
   })
 })
 
@@ -625,6 +662,34 @@ describe('schedulePublication', () => {
     const result = await schedulePublication(payload, fields(key))
     expect(result).toMatchObject({ postId: existing.id, previousJobId: 'job_old' })
     expect((await row(existing.id)).meta?.scheduleToken).not.toBe('old')
+  })
+
+  it('writes every field of the new schedule over the existing row', async () => {
+    const existing = await createRow({ status: 'cancelled', title: 'Old title' })
+    const key = (existing as unknown as { idempotencyKey: string }).idempotencyKey
+    const scheduled = {
+      ...fields(key),
+      body: 'New body',
+      destination: { label: 'Board', meta: { boardName: 'Lions' } },
+      destinationId: 'board_2',
+      link: 'https://example.com/lion',
+      title: 'New title',
+    }
+    const result = await schedulePublication(payload, scheduled)
+    if (result.alreadyPublished) {
+      throw new Error('expected a new schedule')
+    }
+    expect(await row(result.postId)).toMatchObject({
+      attempts: 0,
+      body: 'New body',
+      destination: { label: 'Board', meta: { boardName: 'Lions' } },
+      destinationId: 'board_2',
+      link: 'https://example.com/lion',
+      meta: { queuedInput: input, scheduleToken: result.scheduleToken },
+      scheduledAt: scheduled.scheduledAt,
+      status: 'queued',
+      title: 'New title',
+    })
   })
 
   it.each<[PostStatus, Record<string, unknown>]>([
@@ -774,6 +839,17 @@ describe('cancelQueuedSocialPost', () => {
       statusCode: 409,
     })
     expect((await row(post.id)).status).toBe('queued')
+  })
+
+  it('either cancels a due post or lets the publish task claim it, never both (#144)', async () => {
+    const post = await createRow({ status: 'queued' })
+    const [cancel, claimed] = await Promise.allSettled([
+      cancelQueuedSocialPost({ payload, postId: post.id }),
+      claimForPublish(payload, post as never),
+    ])
+    const cancelled = cancel.status === 'fulfilled'
+    expect(claimed).toEqual({ status: 'fulfilled', value: !cancelled })
+    expect((await row(post.id)).status).toBe(cancelled ? 'cancelled' : 'publishing')
   })
 
   it('404s a missing post', async () => {
