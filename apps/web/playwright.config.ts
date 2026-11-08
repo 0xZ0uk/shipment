@@ -54,6 +54,8 @@ export default defineConfig({
         url: baseURL,
         // The admin assistant answers with its scripted test model (localhost only, never with
         // APP_ENV=production or staging), so the assistant spec needs no OpenRouter key.
-        env: { ASSISTANT_TEST_MODEL: '1' },
+        // SITE_URL: published pages opt in to edge caching only when it's set (cached HTML must
+        // not carry host-derived URLs), so the specs exercise the same headers as production.
+        env: { ASSISTANT_TEST_MODEL: '1', SITE_URL: baseURL },
       },
 })

@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-start/server'
 
 import { assistantConversationDependencies } from './plugins/assistant'
+import { withDefaultCacheControl } from './utilities/cacheControl'
 
 // The admin assistant's Durable Objects (one per conversation, one per user's conversation list):
 // a Worker must export every Durable Object class it binds (`durable_objects` in wrangler.jsonc).
@@ -26,7 +27,20 @@ export type AssistantConversation = InstanceType<typeof AssistantConversation>
 // Worker entry. TanStack Start uses `src/server.ts` as its server entry when it exists, so
 // this replaces the default one: same `fetch`, plus a `scheduled` handler for the Cron
 // Trigger in `wrangler.jsonc`.
-const entry = createServerEntry({ fetch: createStartHandler(defaultStreamHandler) })
+const startFetch = createStartHandler(defaultStreamHandler)
+
+/**
+ * Responses are private unless they opt in. Workers Cache answers before the Worker runs, keys
+ * by URL alone (cookies aren't part of the key) and stores a 200 without `Cache-Control` for two
+ * hours, so the admin, the REST API, `/api/users/me` and server functions would be served to
+ * everyone. Every response without a `Cache-Control` header gets `private, no-cache`; one that
+ * set its own (a published page view from `loadPage`, plugin files, media) keeps it. See
+ * src/utilities/cacheControl.ts.
+ */
+const entry = createServerEntry({
+  fetch: async (...args: Parameters<typeof startFetch>) =>
+    withDefaultCacheControl(await startFetch(...args)),
+})
 
 /**
  * Cron Trigger: queues the due scheduled Payload jobs and runs them. Today that's the SEO
