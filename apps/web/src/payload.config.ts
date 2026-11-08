@@ -13,7 +13,12 @@ import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 
-import { cloudflareEnv as cloudflare, isWorkersRuntime, waitUntil } from '#cloudflare-runtime'
+import {
+  cloudflareEnv as cloudflare,
+  edgeCache,
+  isWorkersRuntime,
+  waitUntil,
+} from '#cloudflare-runtime'
 import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { Folders } from './collections/Folders'
@@ -28,6 +33,7 @@ import { defaultLexical } from './fields/defaultLexical'
 import type { Page } from './payload-types'
 import { abMeasurementConfig } from './plugins/abMeasurement'
 import { abStorage } from './plugins/abTesting'
+import { edgeCachePurge } from './plugins/edgeCachePurge'
 import { assistantAuditSink, assistantConversations, assistantTestModel } from './plugins/assistant'
 import { workersAssistantRateLimit } from './plugins/assistantRateLimit'
 import { limitVersions } from './plugins/limitVersions'
@@ -37,6 +43,7 @@ import { workersSeoRateLimit } from './plugins/seoRateLimit'
 import { SocialsPlugin } from './plugins/socials'
 import { pagePath } from './utilities/pagePath'
 import { siteName } from './utilities/siteName'
+import { createEdgeCachePurger } from './utilities/edgeCache'
 import { createWorkersLogger } from './utilities/workersLogger'
 
 const filename = fileURLToPath(import.meta.url)
@@ -280,6 +287,10 @@ export default buildConfig({
     // composer at /admin/socials, Pinterest only. Disabled until SOCIALS_ENCRYPTION_KEY is set;
     // the schema is the same either way. The Cron Trigger runs its queue (src/server.ts).
     SocialsPlugin,
+    // Purges Workers Cache when page HTML changes: pages, header, footer, media, redirects and
+    // the A/B manifest (src/plugins/edgeCachePurge.ts). After the plugins whose collections it
+    // hooks (seo-redirects, ab-manifest). Does nothing under Node (no Workers Cache).
+    edgeCachePurge(createEdgeCachePurger({ cache: edgeCache, waitUntil })),
     // Last, so the cap also covers collections the plugins above add.
     limitVersions({ max: 20 }),
   ],

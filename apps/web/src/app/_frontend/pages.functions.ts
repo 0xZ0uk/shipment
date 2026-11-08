@@ -3,6 +3,7 @@ import type { Payload, RequiredDataFromCollectionSlug, Where } from 'payload'
 import { createServerFn } from '@tanstack/react-start'
 
 import { homeStatic } from '@/collections/Pages/homeStatic'
+import { isPublicPageView, publicPageHeaders } from '@/utilities/cacheControl'
 import { gaMeasurementIdFor } from '@/utilities/googleAnalytics'
 import { pagePath } from '@/utilities/pagePath'
 
@@ -58,6 +59,7 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
       getRequestHeader,
       getRequestHeaders,
       getRequestUrl,
+      getResponseHeader,
       setResponseHeader,
     } = await import('@tanstack/react-start/server')
     // Loaded after the Payload config: `tanstackSession()` in the config hands the session
@@ -91,6 +93,7 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
     // page's path, never the variant's.
     let variantSlug: string | undefined
     let experiment: string | null = null
+    let abVaries = false
     if (!draft) {
       const { routeAb } = await import('@/plugins/abTesting')
       const { varies, ab } = await routeAb(getRequestHeader('cookie'), pagePath(data.slug), payload)
@@ -100,6 +103,7 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
       // `varies` comes from the manifest, not from `ab`, which is also null when the manifest
       // can't be read (the next request may well be routed). Pages without an experiment keep
       // their normal caching.
+      abVaries = varies
       if (varies) setResponseHeader('Cache-Control', 'private, no-store')
       // With the default variant data, the bucket is the variant's slug.
       variantSlug = ab?.variant?.bucket
@@ -179,6 +183,30 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
     if (page) {
       const { buildPageJsonLd } = await import('@/utilities/pageJsonLd')
       jsonLd = await buildPageJsonLd(page, siteUrl, { slug: canonicalSlug })
+    }
+
+    // Workers Cache: every viewer of this URL gets the same HTML, so the edge may keep it,
+    // tagged for the purge hooks (src/plugins/edgeCachePurge.ts). Decided from what this request
+    // actually carries, never from the URL. Anything else keeps the default `private, no-store`
+    // (src/server.ts), or what was set above (drafts, experiments). Server-function calls
+    // (client-side navigation re-running this loader) stay private for now: only full documents.
+    const serverFnBase = process.env.TSS_SERVER_FN_BASE || '/_serverFn/'
+    const publicView = isPublicPageView({
+      abVaries,
+      document: !getRequestUrl().pathname.startsWith(serverFnBase),
+      draft,
+      draftParam: Boolean(data.draft),
+      found: page != null,
+      markers: markers.context != null,
+      onpageDraft,
+      previewGrant: grant != null,
+      setsCookie: getResponseHeader('Set-Cookie') != null,
+      user: user != null,
+    })
+    if (publicView) {
+      for (const [name, value] of Object.entries(publicPageHeaders(pagePath(data.slug)))) {
+        setResponseHeader(name, value)
+      }
     }
 
     return {

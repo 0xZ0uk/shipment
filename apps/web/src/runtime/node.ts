@@ -15,3 +15,6 @@ export const isWorkersRuntime = false
 
 // Long-lived Node process: background promises survive the response on their own.
 export const waitUntil: ((promise: Promise<unknown>) => void) | undefined = undefined
+
+// No Workers Cache under Node: nothing to purge (src/utilities/edgeCache.ts).
+export const edgeCache = (): CacheContext | undefined => undefined
