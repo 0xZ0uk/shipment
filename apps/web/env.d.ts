@@ -190,10 +190,40 @@ export type CoercedEnvSchema = {
   
   /**
    * **SEO_ALERT_EMAIL** 🔐 _sensitive_  
-   * Comma-separated recipients. Needs an email adapter in the Payload config (none here yet).  
+   * Comma-separated recipients. Needs an email transport (see "Email" below); with Payload's  
+   * console fallback the digest counts the email channel as not delivered.  
    * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M29%2022h-5a2.003%202.003%200%200%201-2-2v-6a2%202%200%200%201%202-2h5v2h-5v6h5ZM18%2012h-4V8h-2v14h6a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-4%208v-6h4v6Zm-6-8H3v2h5v2H4a2%202%200%200%200-2%202v2a2%202%200%200%200%202%202h6v-8a2%202%200%200%200-2-2m0%208H4v-2h4Z%22%2F%3E%3C%2Fsvg%3E)   
    */
   SEO_ALERT_EMAIL?: string;
+  
+  /**
+   * **EMAIL_FROM_ADDRESS**  
+   * Email (src/email.ts): forgot-password emails, the SEO alerts digest and anything else that calls  
+   * `payload.sendEmail`. The transport is picked by what is configured: the `EMAIL` send_email  
+   * binding in wrangler.jsonc (Cloudflare Email Service, see README > Email), else RESEND_API_KEY,  
+   * else none, and Payload logs every email to the console instead of sending it (fine for dev).  
+   *   
+   * Sender address, required once a transport is configured (sends fail with an error naming it  
+   * until it's set). It must be on a domain the transport has verified: onboarded to Cloudflare  
+   * Email Sending, or verified in Resend. E.g. no-reply@example.com.  
+   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M29%2022h-5a2.003%202.003%200%200%201-2-2v-6a2%202%200%200%201%202-2h5v2h-5v6h5ZM18%2012h-4V8h-2v14h6a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-4%208v-6h4v6Zm-6-8H3v2h5v2H4a2%202%200%200%200-2%202v2a2%202%200%200%200%202%202h6v-8a2%202%200%200%200-2-2m0%208H4v-2h4Z%22%2F%3E%3C%2Fsvg%3E)   
+   */
+  EMAIL_FROM_ADDRESS?: string;
+  
+  /**
+   * **EMAIL_FROM_NAME**  
+   * Sender display name. Default: the site name (src/utilities/siteName.ts).  
+   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M29%2022h-5a2.003%202.003%200%200%201-2-2v-6a2%202%200%200%201%202-2h5v2h-5v6h5ZM18%2012h-4V8h-2v14h6a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-4%208v-6h4v6Zm-6-8H3v2h5v2H4a2%202%200%200%200-2%202v2a2%202%200%200%200%202%202h6v-8a2%202%200%200%200-2-2m0%208H4v-2h4Z%22%2F%3E%3C%2Fsvg%3E)   
+   */
+  EMAIL_FROM_NAME?: string;
+  
+  /**
+   * **RESEND_API_KEY** 🔐 _sensitive_  
+   * Resend API key (https://resend.com/api-keys, "Sending access" to the sender's domain). Used  
+   * only when the `EMAIL` binding isn't declared.  
+   * ![icon](data:image/svg+xml;utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20fill%3D%22%23808080%22%20d%3D%22M29%2022h-5a2.003%202.003%200%200%201-2-2v-6a2%202%200%200%201%202-2h5v2h-5v6h5ZM18%2012h-4V8h-2v14h6a2.003%202.003%200%200%200%202-2v-6a2%202%200%200%200-2-2m-4%208v-6h4v6Zm-6-8H3v2h5v2H4a2%202%200%200%200-2%202v2a2%202%200%200%200%202%202h6v-8a2%202%200%200%200-2-2m0%208H4v-2h4Z%22%2F%3E%3C%2Fsvg%3E)   
+   */
+  RESEND_API_KEY?: string;
   
   /**
    * **SEO_ALERT_SCORE_DROP**  
@@ -296,11 +326,11 @@ export type CoercedEnvSchema = {
   
 };
 
-type _CoercedEnvSchema_55e160e0 = CoercedEnvSchema;
+type _CoercedEnvSchema_fc84615c = CoercedEnvSchema;
 
 declare module 'varlock/env' {
-  export interface TypedEnvSchema extends Readonly<_CoercedEnvSchema_55e160e0> {}
-  export interface PublicTypedEnvSchema extends Readonly<Pick<_CoercedEnvSchema_55e160e0, 'APP_ENV' | 'PAYLOAD_LOG_LEVEL' | 'SITE_URL' | 'SEO_LLMS_TXT' | 'SEO_AUDIT_MAX_DOCS' | 'SEO_AUDIT_STEP_DOCS' | 'SEO_FETCH_MAX_DOCS' | 'GSC_OAUTH_CLIENT_ID' | 'SEO_AI_MODEL' | 'SEO_AI_BASE_URL' | 'SEO_AI_REASONING' | 'SEO_AI_DATA_COLLECTION' | 'SEO_EXTERNAL_LINKS_MAX' | 'SEO_EXTERNAL_LINKS_MAX_SUBREQUESTS' | 'SEO_ALERT_WEBHOOK_FORMAT' | 'SEO_ALERT_SCORE_DROP' | 'SEO_ALERT_POSITION_DROP' | 'SEO_ALERT_WINDOW_HOURS' | 'ASSISTANT_TEST_MODEL' | 'PINTEREST_APP_ID' | 'AB_ANALYTICS_ACCOUNT_ID' | 'GA_MEASUREMENT_ID'>> {}
+  export interface TypedEnvSchema extends Readonly<_CoercedEnvSchema_fc84615c> {}
+  export interface PublicTypedEnvSchema extends Readonly<Pick<_CoercedEnvSchema_fc84615c, 'APP_ENV' | 'PAYLOAD_LOG_LEVEL' | 'SITE_URL' | 'SEO_LLMS_TXT' | 'SEO_AUDIT_MAX_DOCS' | 'SEO_AUDIT_STEP_DOCS' | 'SEO_FETCH_MAX_DOCS' | 'GSC_OAUTH_CLIENT_ID' | 'SEO_AI_MODEL' | 'SEO_AI_BASE_URL' | 'SEO_AI_REASONING' | 'SEO_AI_DATA_COLLECTION' | 'SEO_EXTERNAL_LINKS_MAX' | 'SEO_EXTERNAL_LINKS_MAX_SUBREQUESTS' | 'SEO_ALERT_WEBHOOK_FORMAT' | 'EMAIL_FROM_ADDRESS' | 'EMAIL_FROM_NAME' | 'SEO_ALERT_SCORE_DROP' | 'SEO_ALERT_POSITION_DROP' | 'SEO_ALERT_WINDOW_HOURS' | 'ASSISTANT_TEST_MODEL' | 'PINTEREST_APP_ID' | 'AB_ANALYTICS_ACCOUNT_ID' | 'GA_MEASUREMENT_ID'>> {}
 }
 
 
@@ -310,11 +340,11 @@ export type EnvSchemaAsStrings = {
       : (NonNullable<CoercedEnvSchema[Property]> extends boolean ? ('true' | 'false') : string)
 };
 
-type _EnvSchemaAsStrings_55e160e0 = EnvSchemaAsStrings;
+type _EnvSchemaAsStrings_fc84615c = EnvSchemaAsStrings;
 declare global {
 
   // add types for global import.meta.env
-  interface ImportMetaEnv extends _EnvSchemaAsStrings_55e160e0 {}
+  interface ImportMetaEnv extends _EnvSchemaAsStrings_fc84615c {}
   interface ImportMeta {
     readonly env: ImportMetaEnv;
   }
