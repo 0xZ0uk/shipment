@@ -104,7 +104,7 @@ jobs:
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -156,6 +156,11 @@ jobs:
           # Enables the Socials plugin so its admin is functional (without a key it shows a
           # notice, which socials.e2e.spec.ts also handles). Not a real key (32 bytes as hex).
           SOCIALS_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+      # The second-locale specs (#158): their own dev server with `LOCALES=en,pt`
+      # (playwright.locales.config.ts). The run above keeps proving the single-locale site.
+      - name: Playwright (second locale)
+        run: pnpm web test:e2e:locales
 
       - name: Upload the Playwright report
         if: failure()
