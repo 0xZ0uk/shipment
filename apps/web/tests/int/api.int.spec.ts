@@ -3,6 +3,7 @@ import config from '@/payload.config'
 
 import { describe, it, beforeAll, expect } from 'vitest'
 
+import { seedHome } from './localD1/seedHome'
 import { seoSidebarParity } from './localD1/seoSidebarParity'
 
 let payload: Payload
@@ -25,3 +26,4 @@ describe('API', () => {
 // Suites that need Payload on the local D1 run from this file, with this instance: a second
 // spec file booting Payload would start another workerd on the same SQLite file (SQLITE_BUSY).
 seoSidebarParity(() => payload)
+seedHome(() => payload)

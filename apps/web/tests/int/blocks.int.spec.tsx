@@ -14,6 +14,7 @@ import { blockComponents, type LayoutBlock, type LayoutBlockType } from '@/block
 import { blockMetas } from '@/blocks/gallery'
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { DraftModeProvider } from '@/blocks/shared/draftMode'
+import { homePage } from '@/endpoints/seed/home'
 
 // Blocks render TanStack `Link`s (CMSLink), which need a router. A minimal one is enough to
 // build hrefs for `/` and `/$slug`.
@@ -109,5 +110,21 @@ describe('block rendering', () => {
     const block = { blockType: 'globalSection', id: 'missing' } as LayoutBlock
     expect(render(block)).toContain('Choose a reusable section')
     expect(render(block, false)).toBe('')
+  })
+})
+
+describe('seeded homepage', () => {
+  it('renders every block of the landing page POST /api/seed/home creates', () => {
+    const layout = homePage.layout as LayoutBlock[]
+    const html = renderToStaticMarkup(
+      <RouterContextProvider router={router as never}>
+        <DraftModeProvider draft={false}>
+          <RenderBlocks blocks={layout} />
+        </DraftModeProvider>
+      </RouterContextProvider>,
+    )
+    for (const { blockType } of layout) expect(html).toContain(`data-block="${blockType}"`)
+    // In-page links have somewhere to land.
+    for (const anchor of ['features', 'get-started', 'faq']) expect(html).toContain(`id="${anchor}"`)
   })
 })
