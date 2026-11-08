@@ -3,6 +3,7 @@ import config from '@/payload.config'
 
 import { describe, it, beforeAll, expect } from 'vitest'
 
+import { reservedSlug } from './localD1/reservedSlug'
 import { seedHome } from './localD1/seedHome'
 import { seoSidebarParity } from './localD1/seoSidebarParity'
 import { siteSearch } from './localD1/siteSearch'
@@ -36,5 +37,6 @@ describe('API', () => {
 // spec file booting Payload would start another workerd on the same SQLite file (SQLITE_BUSY).
 seoSidebarParity(() => payload)
 seedHome(() => payload)
+reservedSlug(() => payload)
 siteSearch(() => payload)
 socialsAtomicUpdate(() => payload)

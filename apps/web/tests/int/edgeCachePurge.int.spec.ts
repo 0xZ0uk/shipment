@@ -1,7 +1,7 @@
 import type { CollectionConfig, Config, GlobalConfig, PayloadRequest } from 'payload'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { edgeCachePurge, pageChangeTags } from '@/plugins/edgeCachePurge'
+import { edgeCachePurge, pageChangeTags, postChangeTags } from '@/plugins/edgeCachePurge'
 import type { EdgeCachePurger } from '@/utilities/edgeCache'
 
 /** A purger that records what it was asked to purge, per call (empty calls are no-ops, as in the real one). */
@@ -21,9 +21,17 @@ type AnyHook = (args: Record<string, unknown>) => unknown
 
 function hooksOf(purger: EdgeCachePurger) {
   const config = edgeCachePurge(purger)({
-    collections: ['pages', 'media', 'sections', 'seo-redirects', 'ab-manifest', 'users'].map(
-      (slug) => ({ slug, fields: [] }) as CollectionConfig,
-    ),
+    collections: [
+      'pages',
+      'posts',
+      'authors',
+      'categories',
+      'media',
+      'sections',
+      'seo-redirects',
+      'ab-manifest',
+      'users',
+    ].map((slug) => ({ slug, fields: [] }) as CollectionConfig),
     globals: ['header', 'footer'].map((slug) => ({ slug, fields: [] }) as GlobalConfig),
   } as Config) as Config
   const collection = (slug: string) => {
@@ -54,16 +62,18 @@ const run = async (hooks: AnyHook[], args: Record<string, unknown>) => {
   for (const hook of hooks) await hook(args)
 }
 
-/** Runs a Pages update through beforeChange and afterChange, as Payload does. */
+/** Runs a Pages (or Posts) update through beforeChange and afterChange, as Payload does. */
 async function updatePage(
   purger: EdgeCachePurger,
   {
+    collection = 'pages',
     before,
     after,
     data,
     query,
     doc,
   }: {
+    collection?: string
     before: Record<string, unknown> | null
     after?: Record<string, unknown> | null
     data: Record<string, unknown>
@@ -71,7 +81,7 @@ async function updatePage(
     doc: Record<string, unknown>
   },
 ) {
-  const pages = hooksOf(purger).collection('pages')
+  const pages = hooksOf(purger).collection(collection)
   const { findOne, req } = fakeReq(before, query)
   await run(pages.beforeChange, { data, operation: 'update', originalDoc: { id: 1 }, req })
   // What the database holds once the write is done.
@@ -215,6 +225,98 @@ describe('Pages purge hooks', () => {
     })
     expect(findOne).not.toHaveBeenCalled()
     expect(off.calls).toEqual([])
+  })
+})
+
+describe('postChangeTags', () => {
+  const state = (live: boolean, slug: string | null) => ({ live, slug, title: 'T' })
+
+  it('purges nothing for a post nobody can see, before or after', () => {
+    expect(postChangeTags(state(false, 'a'), state(false, 'b'))).toEqual([])
+  })
+
+  it('purges the post and every list of posts, never the layout', () => {
+    expect(postChangeTags(state(true, 'a'), state(true, 'a')).sort()).toEqual([
+      'page:/blog/a',
+      'posts',
+    ])
+    expect(postChangeTags(state(false, 'a'), state(true, 'a')).sort()).toEqual([
+      'page:/blog/a',
+      'posts',
+    ])
+    expect(postChangeTags(state(true, 'a'), state(true, 'b')).sort()).toEqual([
+      'page:/blog/a',
+      'page:/blog/b',
+      'posts',
+    ])
+  })
+})
+
+describe('Posts purge hooks', () => {
+  it('purges nothing for a REST draft save', async () => {
+    const { findOne } = await updatePage(purger, {
+      before: live('hello'),
+      collection: 'posts',
+      data: { _status: 'draft', title: 'Typing' },
+      doc: draft('hello', 'Typing'),
+      query: { autosave: 'true', draft: 'true' },
+    })
+    expect(findOne).not.toHaveBeenCalled()
+    expect(calls).toEqual([])
+  })
+
+  it('reads the published post and purges its path and `posts` on publish and unpublish', async () => {
+    const { findOne } = await updatePage(purger, {
+      before: live('hello'),
+      collection: 'posts',
+      data: { _status: 'published' },
+      doc: live('hello-world'),
+    })
+    expect(findOne).toHaveBeenCalledWith(expect.objectContaining({ collection: 'posts' }))
+    expect(calls).toEqual([['page:/blog/hello', 'page:/blog/hello-world', 'posts']])
+
+    calls.length = 0
+    await updatePage(purger, {
+      after: draft('hello'),
+      before: live('hello'),
+      collection: 'posts',
+      data: { _status: 'draft' },
+      doc: draft('hello'),
+    })
+    expect(calls).toEqual([['page:/blog/hello', 'posts']])
+  })
+
+  it('purges a published post on create and on delete, never a draft', async () => {
+    const posts = hooksOf(purger).collection('posts')
+    const { req } = fakeReq(null)
+    await run(posts.afterChange, { data: {}, doc: { id: 2, ...draft('d') }, operation: 'create', req })
+    await run(posts.afterDelete, { doc: { id: 2, ...draft('d') }, req })
+    expect(calls).toEqual([])
+    await run(posts.afterChange, { data: {}, doc: { id: 3, ...live('n') }, operation: 'create', req })
+    await run(posts.afterDelete, { doc: { id: 4, ...live('o') }, req })
+    expect(calls).toEqual([
+      ['page:/blog/n', 'posts'],
+      ['page:/blog/o', 'posts'],
+    ])
+  })
+
+  it('purges `posts` and the author or category tag when one changes or goes', async () => {
+    const { req } = fakeReq(null)
+    for (const [slug, tag] of [
+      ['authors', 'author:5'],
+      ['categories', 'category:5'],
+    ] as const) {
+      calls.length = 0
+      const hooks = hooksOf(purger).collection(slug)
+      await run(hooks.afterChange, { doc: { id: 5 }, operation: 'create', req })
+      expect(calls).toEqual([])
+      await run(hooks.afterChange, { doc: { id: 5 }, operation: 'update', req })
+      await run(hooks.afterDelete, { doc: { id: 5 }, req })
+      expect(calls).toEqual([
+        [tag, 'posts'],
+        [tag, 'posts'],
+      ])
+    }
   })
 })
 

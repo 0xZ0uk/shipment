@@ -20,18 +20,23 @@ import {
   type LayoutBlockType,
 } from '@/blocks/components'
 import { blockMetas } from '@/blocks/gallery'
+import { postsArchiveSamplePosts } from '@/blocks/PostsArchive/meta'
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { DraftModeProvider } from '@/blocks/shared/draftMode'
+import { PostsArchiveProvider } from '@/components/Posts/context'
 import { homePage } from '@/endpoints/seed/home'
 
-// Blocks render TanStack `Link`s (CMSLink), which need a router. A minimal one is enough to
-// build hrefs for `/` and `/$slug`.
+// Blocks render TanStack `Link`s (CMSLink, post links), which need a router. A minimal one is
+// enough to build hrefs for `/`, `/$slug` and the blog.
 const rootRoute = createRootRoute()
 const router = createRouter({
   history: createMemoryHistory(),
   routeTree: rootRoute.addChildren([
     createRoute({ getParentRoute: () => rootRoute, path: '/' }),
     createRoute({ getParentRoute: () => rootRoute, path: '/$slug' }),
+    createRoute({ getParentRoute: () => rootRoute, path: '/blog' }),
+    createRoute({ getParentRoute: () => rootRoute, path: '/blog/$slug' }),
+    createRoute({ getParentRoute: () => rootRoute, path: '/blog/category/$slug' }),
   ]),
 })
 
@@ -146,6 +151,47 @@ describe('block rendering', () => {
 
   it('renders nothing for a block type that is no longer registered', () => {
     expect(render({ blockType: 'removedBlock', id: 'stale' } as unknown as LayoutBlock)).toBe('')
+  })
+
+  // Without the page loader's posts (no provider: the render tests, the admin's new block) the
+  // block renders its heading; editors also see why it's empty.
+  it.each(['grid', 'list', 'featured'])(
+    'postsArchive (%s) renders the posts the page loader gave it, by block id',
+    (variant) => {
+      const block = {
+        ...blockMetas.postsArchive.example,
+        blockType: 'postsArchive',
+        id: 'latest',
+        variant,
+        category: { id: 1, slug: 'guides', title: 'Guides' },
+      } as LayoutBlock
+      const html = renderToStaticMarkup(
+        <RouterContextProvider router={router as never}>
+          <PostsArchiveProvider byBlock={{ latest: postsArchiveSamplePosts, other: [] }}>
+            <RenderBlocks blocks={[block]} />
+          </PostsArchiveProvider>
+        </RouterContextProvider>,
+      )
+      expect(html.match(/data-post-card=""/g)).toHaveLength(postsArchiveSamplePosts.length)
+      for (const post of postsArchiveSamplePosts) {
+        expect(html).toContain(`href="/blog/${post.slug}"`)
+        expect(html).toContain(post.title)
+      }
+      expect(html).toContain('href="/blog/category/guides"')
+    },
+  )
+
+  it('postsArchive without posts: a hint for editors, the heading alone for visitors', () => {
+    const block = {
+      ...blockMetas.postsArchive.example,
+      blockType: 'postsArchive',
+      id: 'empty',
+    } as LayoutBlock
+    expect(render(block)).toContain('Published posts appear here.')
+    const html = render(block, false)
+    expect(html).not.toContain('Published posts appear here.')
+    expect(html).toContain('Latest posts')
+    expect(html).not.toContain('data-post-card')
   })
 
   it('shows visitors nothing for a global section whose section is missing', () => {

@@ -18,6 +18,7 @@ import { heroMeta } from './Hero/meta'
 import { logosMeta } from './Logos/meta'
 import { mediaBlockMeta } from './MediaBlock/meta'
 import { pageHeaderMeta } from './PageHeader/meta'
+import { postsArchiveMeta } from './PostsArchive/meta'
 import { pricingMeta } from './Pricing/meta'
 import { reviewsMeta } from './Reviews/meta'
 import { richTextMeta } from './RichText/meta'
@@ -29,6 +30,7 @@ export const blockMetas: { [K in LayoutBlockType]: BlockMeta<unknown> } = {
   hero: heroMeta,
   pageHeader: pageHeaderMeta,
   richText: richTextMeta,
+  postsArchive: postsArchiveMeta,
   faq: faqMeta,
   features: featuresMeta,
   featureRows: featureRowsMeta,
