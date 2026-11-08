@@ -104,8 +104,10 @@ export const loadPost = createServerFn({ method: 'GET', strict: { output: false 
     const markers = await onpageContext()
     const result = await payload.find({
       collection: 'posts',
-      // Cover, meta image, categories, and authors with their avatars.
+      // Cover, meta image, categories, and authors with their avatars (and bios: not in
+      // `Authors.defaultPopulate`, which the archives use).
       depth: 2,
+      populate: { authors: { avatar: true, bio: true, name: true, slug: true } },
       draft,
       limit: 1,
       overrideAccess: Boolean(shared),

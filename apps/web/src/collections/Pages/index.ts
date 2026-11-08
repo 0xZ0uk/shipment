@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import { type CollectionConfig, ValidationError } from 'payload'
 
 import {
   MetaDescriptionField,
@@ -15,6 +15,9 @@ import { populatePublishedAt } from '@/hooks/populatePublishedAt'
 import { pagePath } from '@/utilities/pagePath'
 
 // Drafts render on the frontend only for logged-in users who add `?draft=true`.
+/** Served by the blog's routes, so no page may take it. */
+const RESERVED_SLUG = 'blog'
+
 const previewPath = (slug: unknown) =>
   typeof slug === 'string' && slug ? `${pagePath(slug)}?draft=true` : null
 
@@ -106,6 +109,19 @@ export const Pages: CollectionConfig = {
     },
   ],
   hooks: {
+    beforeValidate: [
+      ({ data, req }) => {
+        // `/blog` is the posts archive (src/app/_frontend/blog.index.tsx): a page there would never show.
+        if (data?.slug === RESERVED_SLUG) {
+          throw new ValidationError({
+            collection: 'pages',
+            errors: [{ message: `"${RESERVED_SLUG}" is the blog's address.`, path: 'slug' }],
+            req,
+          })
+        }
+        return data
+      },
+    ],
     beforeChange: [populatePublishedAt],
   },
   versions: {

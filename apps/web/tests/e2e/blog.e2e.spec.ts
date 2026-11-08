@@ -123,6 +123,7 @@ test.describe('Blog', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Welcome to the blog' })).toBeVisible()
     await expect(page.getByText('This blog runs on the same Worker')).toBeVisible()
     await expect(page.locator('[data-post-author]').first()).toHaveText('Sam Builder')
+    await expect(page.getByText('Builds and ships the template, one Worker at a time.')).toBeVisible()
     await expect(page.locator('meta[property="og:type"]')).toHaveAttribute('content', 'article')
 
     const jsonLd = await page
