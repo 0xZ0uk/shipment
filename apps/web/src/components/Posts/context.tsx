@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from 'react'
+import React, { createContext, useContext, useMemo } from 'react'
 
 import type { PostSummary } from './types'
 
@@ -17,9 +17,10 @@ const PostsArchiveContext = createContext<PostsArchiveContextValue>({ byBlock: {
  */
 export const PostsArchiveProvider: React.FC<
   PostsArchiveContextValue & { children: React.ReactNode }
-> = ({ byBlock, children, fallback }) => (
-  <PostsArchiveContext.Provider value={{ byBlock, fallback }}>{children}</PostsArchiveContext.Provider>
-)
+> = ({ byBlock, children, fallback }) => {
+  const value = useMemo(() => ({ byBlock, fallback }), [byBlock, fallback])
+  return <PostsArchiveContext.Provider value={value}>{children}</PostsArchiveContext.Provider>
+}
 
 /** The posts for the Posts archive block with id `id`. */
 export const useArchivePosts = (id: null | string | undefined): PostSummary[] => {
