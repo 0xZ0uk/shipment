@@ -18,6 +18,7 @@ export {
 } from './docref.ts'
 export {
   getAt,
+  hasMarker,
   insertItem,
   moveItem,
   newRowId,
@@ -31,6 +32,8 @@ export {
   setAt,
   splitItemPath,
   updateArray,
+  withMarker,
+  withoutMarker,
   type PathSegment,
 } from './path.ts'
 export {
@@ -143,5 +146,5 @@ export {
   type SealMode,
   type SealSecret,
 } from './seal.ts'
-export { CONTEXT_KEY, COOKIE, DEFAULTS, HEADER, ROUTES } from './constants.ts'
+export { CONTEXT_KEY, COOKIE, DEFAULTS, HEADER, MARKER_PARAM, ROUTES } from './constants.ts'
 export { assertNever, errorText } from './util.ts'

@@ -9,6 +9,9 @@ import {
   setAt,
   splitItemPath,
   updateArray,
+  hasMarker,
+  withMarker,
+  withoutMarker,
 } from '../path.ts'
 import type { SchemaField } from '../schema.ts'
 import schemaFixture from './fixtures/schema.json'
@@ -49,6 +52,27 @@ describe('path', () => {
     expect(updateArray({}, 'list', (a) => [...a, 'x'])).toEqual({ list: ['x'] })
     expect(splitItemPath('sections.3.items.1')).toEqual(['sections.3.items', 1])
     expect(splitItemPath('sections.3.heading')).toBeNull()
+  })
+})
+
+describe('edit/preview URL marker', () => {
+  it('adds the marker to paths and URLs, once, keeping the query and hash', () => {
+    expect(withMarker('/about')).toBe('/about?_onpage=1')
+    expect(withMarker('/about?tab=2#faq')).toBe('/about?tab=2&_onpage=1#faq')
+    expect(withMarker('/about?_onpage=1')).toBe('/about?_onpage=1')
+    expect(withMarker('https://site.test/a?b=1')).toBe('https://site.test/a?b=1&_onpage=1')
+  })
+  it('removes it, leaving other parameters alone', () => {
+    expect(withoutMarker('/about?_onpage=1')).toBe('/about')
+    expect(withoutMarker('/about?tab=2&_onpage=1#faq')).toBe('/about?tab=2#faq')
+    expect(withoutMarker('/about?tab=2')).toBe('/about?tab=2')
+    expect(withoutMarker('https://site.test/a?_onpage=1')).toBe('https://site.test/a')
+  })
+  it('detects it in a search string', () => {
+    expect(hasMarker('?a=1&_onpage=1')).toBe(true)
+    expect(hasMarker('_onpage=1')).toBe(true)
+    expect(hasMarker('?a=1')).toBe(false)
+    expect(hasMarker('')).toBe(false)
   })
 })
 

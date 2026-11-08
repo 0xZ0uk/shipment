@@ -450,7 +450,8 @@ describe('enter / mode / exit', () => {
     expect((await call('POST', enterPath(ids.adminPage), { as: 'editor' })).status).toBe(403)
     const own = await call('POST', enterPath(ids.editorPage), { as: 'editor' })
     expect(own.status).toBe(303)
-    expect(own.headers.get('location')).toBe(`${ORIGIN}/editor-page`)
+    // Edit mode gets its own URL (the marker), apart from any cached published page.
+    expect(own.headers.get('location')).toBe(`${ORIGIN}/editor-page?_onpage=1`)
     expect(calls).toEqual([
       {
         fn: 'enable',
@@ -472,6 +473,7 @@ describe('enter / mode / exit', () => {
     expect(calls).toEqual([])
     const editor = await call('POST', '/onpage/mode?mode=edit&path=/', { as: 'editor' })
     expect(editor.status).toBe(303)
+    expect(editor.headers.get('location')).toBe(`${ORIGIN}/?_onpage=1`)
     expect(calls).toEqual([
       {
         fn: 'enable',
@@ -488,6 +490,17 @@ describe('enter / mode / exit', () => {
     expect((await call('POST', '/onpage/preview-link', { body })).status).toBe(403)
     expect((await call('POST', '/onpage/preview-link', { as: 'customer', body })).status).toBe(403)
     expect((await call('POST', '/onpage/preview-link', { as: 'admin', body })).status).toBe(400)
+  })
+  it('exit drops the marker and keeps the rest of the path', async () => {
+    const path = encodeURIComponent('/about?tab=2&_onpage=1#faq')
+    const res = await call('POST', `/onpage/exit?path=${path}`)
+    expect(res.status).toBe(303)
+    expect(res.headers.get('location')).toBe(`${ORIGIN}/about?tab=2#faq`)
+  })
+  it('mode keeps the marker on the path it returns to', async () => {
+    const path = encodeURIComponent('/about?tab=2&_onpage=1')
+    const res = await call('POST', `/onpage/mode?mode=view&path=${path}`, { as: 'editor' })
+    expect(res.headers.get('location')).toBe(`${ORIGIN}/about?tab=2&_onpage=1`)
   })
   it('never redirects off-site', async () => {
     for (const bad of ['//evil.test', '/%09/evil.test', '/\t/evil.test', 'https://evil.test']) {
@@ -774,7 +787,7 @@ describe('preview links', () => {
     ).json()
     const res = await handleEndpoints({ config, request: new Request(link.url) })
     expect(res.status).toBe(307)
-    expect(res.headers.get('location')).toBe(`${ORIGIN}/admin-page`)
+    expect(res.headers.get('location')).toBe(`${ORIGIN}/admin-page?_onpage=1`)
     const args = calls[0]!.args as { path: string; sealed: string }
     expect(calls[0]!.fn).toBe('enableLink')
     expect(args.path).toBe('/admin-page')

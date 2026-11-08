@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import { OnPage } from '@shipment/onpage-tanstack-start'
+import { OnPage, retainOnPageMarker, validateOnPageSearch } from '@shipment/onpage-tanstack-start'
 import { createFileRoute, Outlet } from '@tanstack/react-router'
 
 import { NotFound } from '@/components/NotFound'
@@ -21,6 +21,11 @@ export const Route = createFileRoute('/_frontend')({
   staleTime: Infinity,
   // Unmatched URLs (e.g. `/a/b`) render this inside the layout.
   notFoundComponent: NotFound,
+  // In edit mode and on preview links every URL carries `?_onpage=1`, so a cache keyed by URL
+  // never answers an editor with the published page. Links and navigations keep it; visitors
+  // never have it.
+  validateSearch: validateOnPageSearch,
+  search: { middlewares: [retainOnPageMarker] },
 })
 
 function FrontendLayout() {

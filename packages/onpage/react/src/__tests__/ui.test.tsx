@@ -561,14 +561,14 @@ describe('saved sections and new pages', () => {
         fireEvent.click(screen.getByTestId('onpage-page-settings-open'))
         if (action === 'duplicate') {
           fireEvent.click(await screen.findByTestId('onpage-page-duplicate'))
-          await waitFor(() => expect(assign).toHaveBeenCalledWith('/home-copy'))
+          await waitFor(() => expect(assign).toHaveBeenCalledWith('/home-copy?_onpage=1'))
         } else {
           fireEvent.change(await screen.findByTestId('onpage-page-new-title'), {
             target: { value: 'News' },
           })
           fireEvent.click(screen.getByTestId('onpage-page-create'))
           await waitFor(() => expect(createPage).toHaveBeenCalledWith('pages', { title: 'News' }))
-          await waitFor(() => expect(assign).toHaveBeenCalledWith('/news'))
+          await waitFor(() => expect(assign).toHaveBeenCalledWith('/news?_onpage=1'))
         }
       } finally {
         vi.unstubAllGlobals()
