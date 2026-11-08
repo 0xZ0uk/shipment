@@ -38,11 +38,13 @@ export const Footer: GlobalConfig = {
         {
           name: 'title',
           type: 'text',
+          localized: true,
           admin: { placeholder: defaultCookieConsentCopy.title },
         },
         {
           name: 'description',
           type: 'textarea',
+          localized: true,
           admin: { placeholder: defaultCookieConsentCopy.description },
         },
         {
@@ -51,18 +53,21 @@ export const Footer: GlobalConfig = {
             {
               name: 'acceptLabel',
               type: 'text',
+              localized: true,
               admin: { placeholder: defaultCookieConsentCopy.acceptLabel, width: '33%' },
               label: 'Accept button',
             },
             {
               name: 'rejectLabel',
               type: 'text',
+              localized: true,
               admin: { placeholder: defaultCookieConsentCopy.rejectLabel, width: '33%' },
               label: 'Reject button',
             },
             {
               name: 'settingsLabel',
               type: 'text',
+              localized: true,
               admin: {
                 description: 'The footer link that reopens the banner.',
                 placeholder: defaultCookieConsentCopy.settingsLabel,

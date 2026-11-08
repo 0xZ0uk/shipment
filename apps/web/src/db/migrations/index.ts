@@ -14,6 +14,7 @@ import * as migration_20261106_193957_fk_on_delete from './20261106_193957_fk_on
 import * as migration_20261107_001439_mcp_oauth from './20261107_001439_mcp_oauth';
 import * as migration_20261108_104515_cookie_consent from './20261108_104515_cookie_consent';
 import * as migration_20261108_114554_posts from './20261108_114554_posts';
+import * as migration_20261108_121955_localized_content from './20261108_121955_localized_content';
 
 export const migrations = [
   {
@@ -94,6 +95,11 @@ export const migrations = [
   {
     up: migration_20261108_114554_posts.up,
     down: migration_20261108_114554_posts.down,
-    name: '20261108_114554_posts'
+    name: '20261108_114554_posts',
+  },
+  {
+    up: migration_20261108_121955_localized_content.up,
+    down: migration_20261108_121955_localized_content.down,
+    name: '20261108_121955_localized_content'
   },
 ];
