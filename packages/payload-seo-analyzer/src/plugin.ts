@@ -22,7 +22,14 @@
  */
 
 import type { Config, Field, Plugin } from 'payload'
-import type { SeoConfig, SeoExcludeDocs, SeoFeatures, RuleGroup, SeoThresholds } from './types.js'
+import type {
+  SeoConfig,
+  SeoExcludeDocs,
+  SeoFeatures,
+  SeoLocalization,
+  RuleGroup,
+  SeoThresholds,
+} from './types.js'
 import { seoFields } from './fields.js'
 import { metaFields } from './metaFields.js'
 import { createValidateHandler } from './endpoints/validate.js'
@@ -170,6 +177,11 @@ export interface SeoPluginConfig {
    * own entries (e.g. `{ projects: 'work' }`).
    */
   collectionRoutes?: CollectionRoutes
+  /**
+   * The site's locales: sitemap.xml lists each document once per locale it is published in, with
+   * `xhtml:link` hreflang alternates (see `SeoConfig.localization`). Off with one locale.
+   */
+  localization?: SeoLocalization
   /**
    * Secret header value for the seo-logs POST endpoint. If set, POST requests must carry the
    * `X-SEO-Secret` header with this value — which is what lets a host's 404 middleware log hits
@@ -344,6 +356,7 @@ export function buildSeoConfig(pluginConfig: SeoPluginConfig): SeoConfig {
     ...(pluginConfig.collectionRoutes && { collectionRoutes: pluginConfig.collectionRoutes }),
     ...(pluginConfig.excludeDocs && { excludeDocs: pluginConfig.excludeDocs }),
     ...(pluginConfig.excludeDocsFields && { excludeDocsFields: pluginConfig.excludeDocsFields }),
+    ...(pluginConfig.localization && { localization: pluginConfig.localization }),
   }
 }
 

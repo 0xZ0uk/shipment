@@ -41,6 +41,11 @@ export interface FetchAllDocsOptions {
    * out (they don't count against `maxDocs`), and `select` is widened to the fields it reads.
    */
   exclude?: DocExclusion
+  /**
+   * The locale to read in (Payload's `locale`), e.g. `'all'` for every locale's values of the
+   * localized fields. Payload's default locale when unset.
+   */
+  locale?: string
 }
 
 /** Page size for the internal paginated reads. */
@@ -81,6 +86,7 @@ export async function fetchAllDocs(
               depth,
               overrideAccess: true,
               ...(select ? { select } : {}),
+              ...(options.locale ? { locale: options.locale as never } : {}),
             })
           } catch (selectErr) {
             // A `select` naming a field this collection does not have would make
@@ -97,6 +103,7 @@ export async function fetchAllDocs(
               page,
               depth,
               overrideAccess: true,
+              ...(options.locale ? { locale: options.locale as never } : {}),
             })
           }
         } catch (err) {
