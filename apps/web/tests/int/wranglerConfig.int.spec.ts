@@ -43,7 +43,7 @@ describe('wrangler.jsonc', () => {
         )?.namespace_id,
       }
     }
-    expect(forms()).toEqual({ db: 'shipment-forms', limit: '1007' })
-    expect(forms('staging')).toEqual({ db: 'shipment-forms-staging', limit: '1107' })
+    expect(forms()).toEqual({ db: 'shipment-forms', limit: '1008' })
+    expect(forms('staging')).toEqual({ db: 'shipment-forms-staging', limit: '1108' })
   })
 })

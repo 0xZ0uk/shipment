@@ -125,12 +125,20 @@
       "namespace_id": "1006",
       "simple": { "limit": 10, "period": 60 },
     },
+    // Site search queries (`GET /api/search` and the `/search` page, unauthenticated), per client
+    // IP. The header's palette sends one query per typing pause; this only stops a script. Generous
+    // enough for visitors behind one shared IP. See src/plugins/searchRateLimit.ts.
+    {
+      "name": "SEARCH_RATE_LIMIT",
+      "namespace_id": "1007",
+      "simple": { "limit": 60, "period": 60 },
+    },
     // Contact and newsletter forms (`POST /api/forms/:form`, unauthenticated), per client IP,
     // checked before Turnstile so a flood costs no Siteverify calls. A person sends a form once
     // or twice; 10 a minute leaves room for visitors behind one shared IP. See src/forms.
     {
       "name": "FORMS_RATE_LIMIT",
-      "namespace_id": "1007",
+      "namespace_id": "1008",
       "simple": { "limit": 10, "period": 60 },
     },
   ],
@@ -231,8 +239,13 @@
           "simple": { "limit": 10, "period": 60 },
         },
         {
-          "name": "FORMS_RATE_LIMIT",
+          "name": "SEARCH_RATE_LIMIT",
           "namespace_id": "1107",
+          "simple": { "limit": 60, "period": 60 },
+        },
+        {
+          "name": "FORMS_RATE_LIMIT",
+          "namespace_id": "1108",
           "simple": { "limit": 10, "period": 60 },
         },
       ],
