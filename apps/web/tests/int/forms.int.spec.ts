@@ -250,6 +250,14 @@ describe('POST /api/forms/:form', () => {
     expect(sendEmail.mock.calls[0]![0]).toMatchObject({ to: 'ada@example.com' })
   })
 
+  it("puts nothing the visitor typed into the autoresponder (it goes to any typed address)", async () => {
+    const { deps: d, sendEmail } = deps({ autoresponder: true, notifyTo: [] })
+    const name = 'Buy cheap pills at spam.example'
+    await post(d, 'contact', { ...contactBody, name, message: 'Visit spam.example now' })
+    const sent = JSON.stringify(sendEmail.mock.calls[0]![0])
+    expect(sent).not.toContain('spam.example')
+  })
+
   it('runs follow-ups through waitUntil when given', async () => {
     const waitUntil = vi.fn()
     const { deps: d, sendEmail } = deps({ waitUntil })

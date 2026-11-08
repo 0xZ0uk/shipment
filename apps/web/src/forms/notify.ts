@@ -57,14 +57,19 @@ export function ownerNotification(
   }
 }
 
-/** The optional "we got your message" email to a contact form's sender (FORMS_AUTORESPONDER). */
+/**
+ * The optional "we got your message" email to a contact form's sender (FORMS_AUTORESPONDER).
+ * Fixed copy only: the address is whatever was typed in, so nothing else the visitor typed
+ * (their name included) goes into it, or the form would relay their text from the site's own
+ * sender to anyone.
+ */
 export function autoresponder(
   submission: Extract<ParsedSubmission, { form: 'contact' }>,
   { siteName }: { siteName: string },
 ): SendEmailOptions {
   const text =
-    `Hi ${submission.data.name},\n\nThanks for getting in touch. We got your message and will ` +
-    `reply soon.\n\n${siteName}`
+    `Hi,\n\nThanks for getting in touch. We got your message and will reply soon.\n\n` +
+    siteName
   return {
     to: submission.data.email,
     subject: `We got your message – ${siteName}`,

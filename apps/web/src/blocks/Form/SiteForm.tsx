@@ -34,6 +34,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   verifying: 'One moment: we are still checking you are human. Try again in a few seconds.',
 }
 const GENERIC_ERROR = 'Something went wrong. Please try again.'
+// Automatic retries of a failed site key fetch (2 s, 4 s, 8 s), on top of one per submit.
+const KEY_RETRIES = 3
 
 /** The `/api/forms` answers after which the Turnstile token was spent and needs a new one. */
 const spendsToken = (status: number) => status !== 400 && status !== 429
@@ -77,6 +79,8 @@ export const SiteForm: React.FC<
   const widgetRef = useRef<HTMLDivElement>(null)
   const turnstile = useRef<{ api: TurnstileApi; widgetId?: string } | null>(null)
   const [siteKey, setSiteKey] = useState<string | null | undefined>(undefined)
+  // Bumped to fetch the site key again after a failed attempt (a blip must not break the form).
+  const [keyAttempt, setKeyAttempt] = useState(0)
   const [token, setToken] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
@@ -88,15 +92,22 @@ export const SiteForm: React.FC<
 
   useEffect(() => {
     let active = true
+    let retry: ReturnType<typeof setTimeout> | undefined
     loadSiteKey().then(
       (key) => active && setSiteKey(key),
-      // Unknown (offline, a blip): keep the form; submitting says to try again.
-      () => {},
+      // Unknown (offline, a blip): keep the form and try again a few times, backing off; a
+      // submit also tries again (below).
+      () => {
+        if (active && keyAttempt < KEY_RETRIES) {
+          retry = setTimeout(() => setKeyAttempt((n) => n + 1), 2000 * 2 ** keyAttempt)
+        }
+      },
     )
     return () => {
       active = false
+      clearTimeout(retry)
     }
-  }, [])
+  }, [keyAttempt])
 
   useEffect(() => {
     const container = widgetRef.current
@@ -136,6 +147,8 @@ export const SiteForm: React.FC<
     if (status === 'sending') return
     if (!token) {
       setError(siteKey === null ? ERROR_MESSAGES.not_configured! : ERROR_MESSAGES.verifying!)
+      // The site key never arrived: fetch it again, so the widget can still appear.
+      if (siteKey === undefined) setKeyAttempt((n) => n + 1)
       return
     }
     const data = new FormData(event.currentTarget)
