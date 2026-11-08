@@ -28,6 +28,7 @@ export const blockLoaders: BlockLoaders = {
   hero: () => import('./Hero/Component').then((m) => m.HeroBlock),
   pageHeader: () => import('./PageHeader/Component').then((m) => m.PageHeaderBlock),
   richText: () => import('./RichText/Component').then((m) => m.RichTextBlock),
+  postsArchive: () => import('./PostsArchive/Component').then((m) => m.PostsArchiveBlock),
   faq: () => import('./Faq/Component').then((m) => m.FaqBlock),
   features: () => import('./Features/Component').then((m) => m.FeaturesBlock),
   featureRows: () => import('./FeatureRows/Component').then((m) => m.FeatureRowsBlock),

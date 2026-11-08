@@ -5,7 +5,7 @@ import type {
 } from '@shipment/payload-plugin-socials'
 
 import { cloudflareEnv as cloudflare } from '#cloudflare-runtime'
-import { pageSocialContext } from '@/utilities/socialsPageSource'
+import { pageSocialContext, postSocialContext } from '@/utilities/socialsPageSource'
 
 const encryptionKey = process.env.SOCIALS_ENCRYPTION_KEY || cloudflare.SOCIALS_ENCRYPTION_KEY || ''
 const previousEncryptionKeys = (
@@ -39,6 +39,20 @@ const pageSource: SourceContextResolver = async ({ id, payload, req }) => {
   return pageSocialContext(page, siteUrl || req?.origin || '')
 }
 
+/** A blog post's context for the composer, read like a page's. */
+const postSource: SourceContextResolver = async ({ id, payload, req }) => {
+  const post = await payload.findByID({
+    id,
+    collection: 'posts',
+    // Depth 1 populates the SEO image and the cover.
+    depth: 1,
+    overrideAccess: true,
+    req,
+  })
+
+  return postSocialContext(post, siteUrl || req?.origin || '')
+}
+
 /**
  * Socials plugin options, shared by `payload.config.ts` and the Cron Trigger (`src/server.ts`
  * passes them to `normalizePluginOptions`, so both must see the same object).
@@ -48,7 +62,7 @@ const pageSource: SourceContextResolver = async ({ id, payload, req }) => {
  *   (nav link, `/admin/socials`, dashboard widget, the Socials tab), which show a notice. The
  *   schema, the migration and the import map are the same either way, so none of them needs
  *   secrets.
- * - Pages only (`sources.page`), Pinterest only. Pinterest turns on with its app credentials
+ * - Pages and blog posts (`sources.page`, `sources.post`), Pinterest only. Pinterest turns on with its app credentials
  *   and a `SITE_URL` to build the OAuth redirect from. Facebook, Instagram and Google Business
  *   Profile are left out (disabled).
  * - Any logged-in admin user may publish and manage connections; there is no role field.
@@ -58,7 +72,10 @@ const pageSource: SourceContextResolver = async ({ id, payload, req }) => {
  */
 export const socialsOptions = {
   admin: {
-    injectInto: [{ collection: 'pages', sourceKind: 'page' }],
+    injectInto: [
+      { collection: 'pages', sourceKind: 'page' },
+      { collection: 'posts', sourceKind: 'post' },
+    ],
     mode: 'both',
   },
   assets: { autoConvert: false, normalize: false },
@@ -76,7 +93,7 @@ export const socialsOptions = {
   },
   previousEncryptionKeys,
   scheduling: { drainBatchSize: 5 },
-  sources: { page: pageSource },
+  sources: { page: pageSource, post: postSource },
 } satisfies PayloadPluginSocialsConfig
 
 export const SocialsPlugin = payloadPluginSocials(socialsOptions)

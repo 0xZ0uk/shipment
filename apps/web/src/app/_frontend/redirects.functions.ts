@@ -1,3 +1,4 @@
+import { notFound, redirect } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 
 import type { RedirectIndex, ResolvedRedirect } from '@/utilities/redirects'
@@ -117,3 +118,18 @@ export const resolveRedirect = createServerFn({ method: 'GET' })
 
     return target
   })
+
+/**
+ * A route loader's miss (no such post, category or archive page): the SEO redirect for this URL
+ * if there is one, else a 404. Only misses pay for the lookup.
+ */
+export const redirectOrNotFound = async (location: {
+  pathname: string
+  searchStr: string
+}): Promise<never> => {
+  const target = await resolveRedirect({
+    data: { pathname: location.pathname, search: location.searchStr },
+  })
+  if (target) throw redirect({ href: target.href, statusCode: target.statusCode })
+  throw notFound()
+}

@@ -71,7 +71,7 @@ describe('Markdown rich text wiring', () => {
       .filter((c) => !c.slug.startsWith('payload-') && hasRichText(c.fields as AnyField[]))
       .map((c) => c.slug)
       .sort()
-    expect(withRichText).toEqual(['media', 'pages', 'sections'])
+    expect(withRichText).toEqual(['media', 'pages', 'posts', 'sections'])
     const mcp = sanitized.plugins?.find(
       (p) => (p as { slug?: string }).slug === '@payloadcms/plugin-mcp',
     ) as

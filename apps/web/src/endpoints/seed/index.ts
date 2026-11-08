@@ -1,5 +1,6 @@
 import type { Endpoint, PayloadRequest, RequiredDataFromCollectionSlug } from 'payload'
 
+import { blogAuthors, blogCategories, blogPosts } from './blog'
 import { homePage, navigation } from './home'
 
 type PageData = RequiredDataFromCollectionSlug<'pages'>
@@ -55,9 +56,83 @@ export const seedNavigation = async (req: PayloadRequest): Promise<Array<'footer
   return seeded
 }
 
+export type SeedBlogResult = Record<'authors' | 'categories' | 'posts', number>
+
+/**
+ * Creates the example authors, categories and (published) posts of `./blog.ts`, as `req.user`.
+ * Anything whose slug already exists is left alone, so it can run on a site with content.
+ * Returns how many of each it created.
+ */
+export const seedBlog = async (req: PayloadRequest): Promise<SeedBlogResult> => {
+  const access = { req, user: req.user, overrideAccess: false } as const
+  const created: SeedBlogResult = { authors: 0, categories: 0, posts: 0 }
+
+  const idsBySlug = async (collection: 'authors' | 'categories' | 'posts', slugs: string[]) => {
+    const { docs } = await req.payload.find({
+      ...access,
+      collection,
+      depth: 0,
+      pagination: false,
+      select: { slug: true },
+      where: { slug: { in: slugs } },
+    })
+    return new Map(docs.map((doc) => [doc.slug, doc.id]))
+  }
+
+  const authors = await idsBySlug('authors', blogAuthors.map((a) => a.slug!))
+  for (const data of blogAuthors) {
+    if (authors.has(data.slug!)) continue
+    const doc = await req.payload.create({ ...access, collection: 'authors', data, depth: 0 })
+    authors.set(doc.slug, doc.id)
+    created.authors++
+  }
+
+  const categories = await idsBySlug('categories', blogCategories.map((c) => c.slug!))
+  for (const data of blogCategories) {
+    if (categories.has(data.slug!)) continue
+    const doc = await req.payload.create({ ...access, collection: 'categories', data, depth: 0 })
+    categories.set(doc.slug, doc.id)
+    created.categories++
+  }
+
+  const posts = await idsBySlug('posts', blogPosts.map((p) => p.slug!))
+  // Oldest first, so a list sorted by creation agrees with `publishedAt`.
+  for (const { authors: authorSlugs, categories: categorySlugs, ...data } of [...blogPosts].reverse()) {
+    if (posts.has(data.slug!)) continue
+    await req.payload.create({
+      ...access,
+      collection: 'posts',
+      data: {
+        ...data,
+        authors: authorSlugs.flatMap((slug) => authors.get(slug) ?? []),
+        categories: categorySlugs.flatMap((slug) => categories.get(slug) ?? []),
+      },
+      depth: 0,
+    })
+    created.posts++
+  }
+
+  return created
+}
+
+/**
+ * `POST /api/seed/blog`: the example authors, categories and posts (`seedBlog`). Signed-in users
+ * only. Safe to repeat: existing slugs are skipped.
+ */
+export const seedBlogEndpoint: Endpoint = {
+  path: '/seed/blog',
+  method: 'post',
+  handler: async (req) => {
+    if (!req.user) return Response.json({ error: 'Sign in to seed the blog.' }, { status: 401 })
+    const created = await seedBlog(req)
+    return Response.json({ created }, { status: 200 })
+  },
+}
+
 /**
  * `POST /api/seed/home`: seeds the homepage (slug `home`, served at `/`) with the template's
- * landing page (`./home.ts`), and links to its sections in an empty header and footer.
+ * landing page (`./home.ts`), links to its sections in an empty header and footer, and the
+ * example blog posts (`seedBlog`, which skips what exists).
  * Signed-in users only. Answers 409 if a homepage already exists; `?overwrite=true` replaces
  * it (the header and footer are still only filled when empty).
  */
@@ -81,9 +156,10 @@ export const seedHomeEndpoint: Endpoint = {
     }
 
     const navigationSeeded = await seedNavigation(req)
+    const blog = await seedBlog(req)
 
     return Response.json(
-      { ...result, navigation: navigationSeeded },
+      { ...result, blog, navigation: navigationSeeded },
       { status: result.status === 'created' ? 201 : 200 },
     )
   },

@@ -20,6 +20,7 @@ import { HeroConfig } from './Hero/config'
 import { LogosConfig } from './Logos/config'
 import { MediaBlockConfig } from './MediaBlock/config'
 import { PageHeaderConfig } from './PageHeader/config'
+import { PostsArchiveConfig } from './PostsArchive/config'
 import { PricingConfig } from './Pricing/config'
 import { ReviewsConfig } from './Reviews/config'
 import { RichTextConfig } from './RichText/config'
@@ -31,6 +32,7 @@ export const blocks: Block[] = [
   HeroConfig,
   PageHeaderConfig,
   RichTextConfig,
+  PostsArchiveConfig,
   FaqConfig,
   FeaturesConfig,
   FeatureRowsConfig,

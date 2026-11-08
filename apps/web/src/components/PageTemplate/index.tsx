@@ -9,6 +9,8 @@ import { AbConversionTracker } from '@/components/AbConversionTracker'
 import { useConsent } from '@/components/CookieConsent'
 import { GoogleAnalyticsConfig } from '@/components/GoogleAnalytics'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
+import { PostsArchiveProvider } from '@/components/Posts/context'
+import type { PostSummary } from '@/components/Posts/types'
 
 export const PageTemplate: React.FC<{
   /** A draft read (live preview, on-page editing, a preview link): blocks may show hints. */
@@ -20,7 +22,9 @@ export const PageTemplate: React.FC<{
   /** The admin's live preview: reload the route's data when the document is saved there. */
   livePreview: boolean
   page: NonNullable<LoadPageResult['page']>
-}> = ({ draft, experiment, gaMeasurementId, livePreview, page }) => {
+  /** The Posts archive blocks' posts, by block id (`loadPage`). */
+  postsArchive?: Record<string, PostSummary[]>
+}> = ({ draft, experiment, gaMeasurementId, livePreview, page, postsArchive }) => {
   const { layout } = page
 
   return (
@@ -34,7 +38,9 @@ export const PageTemplate: React.FC<{
       )}
 
       <DraftModeProvider draft={draft}>
-        <RenderBlocks blocks={layout} />
+        <PostsArchiveProvider byBlock={postsArchive ?? {}}>
+          <RenderBlocks blocks={layout} />
+        </PostsArchiveProvider>
       </DraftModeProvider>
     </article>
   )

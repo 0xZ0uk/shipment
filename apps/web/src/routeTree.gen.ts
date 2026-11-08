@@ -19,11 +19,17 @@ import { Route as FrontendIndexRouteImport } from './app/_frontend/index'
 import { Route as FrontendSplatRouteImport } from './app/_frontend/$'
 import { Route as FrontendSlugRouteImport } from './app/_frontend/$slug'
 import { Route as FrontendSearchRouteImport } from './app/_frontend/search'
+import { Route as BlogRssDotxmlRouteImport } from './app/blog.rss[.]xml'
 import { Route as ImgSplatRouteImport } from './app/img.$'
+import { Route as FrontendBlogIndexRouteImport } from './app/_frontend/blog.index'
+import { Route as FrontendBlogSlugRouteImport } from './app/_frontend/blog.$slug'
 import { Route as FrontendDevBlocksRouteImport } from './app/_frontend/dev.blocks'
 import { Route as PayloadAdminIndexRouteImport } from './app/_payload/admin.index'
 import { Route as PayloadAdminSplatRouteImport } from './app/_payload/admin.$'
 import { Route as PayloadApiSplatRouteImport } from './app/_payload/api.$'
+import { Route as FrontendBlogPagePageRouteImport } from './app/_frontend/blog.page.$page'
+import { Route as FrontendBlogCategorySlugIndexRouteImport } from './app/_frontend/blog.category.$slug.index'
+import { Route as FrontendBlogCategorySlugPagePageRouteImport } from './app/_frontend/blog.category.$slug.page.$page'
 
 const FrontendRoute = FrontendRouteImport.update({
   id: '/_frontend',
@@ -73,10 +79,25 @@ const FrontendSearchRoute = FrontendSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => FrontendRoute,
 } as any)
+const BlogRssDotxmlRoute = BlogRssDotxmlRouteImport.update({
+  id: '/blog/rss.xml',
+  path: '/blog/rss.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ImgSplatRoute = ImgSplatRouteImport.update({
   id: '/img/$',
   path: '/img/$',
   getParentRoute: () => rootRouteImport,
+} as any)
+const FrontendBlogIndexRoute = FrontendBlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => FrontendRoute,
+} as any)
+const FrontendBlogSlugRoute = FrontendBlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
+  getParentRoute: () => FrontendRoute,
 } as any)
 const FrontendDevBlocksRoute = FrontendDevBlocksRouteImport.update({
   id: '/dev/blocks',
@@ -98,6 +119,23 @@ const PayloadApiSplatRoute = PayloadApiSplatRouteImport.update({
   path: '/api/$',
   getParentRoute: () => PayloadRoute,
 } as any)
+const FrontendBlogPagePageRoute = FrontendBlogPagePageRouteImport.update({
+  id: '/blog/page/$page',
+  path: '/blog/page/$page',
+  getParentRoute: () => FrontendRoute,
+} as any)
+const FrontendBlogCategorySlugIndexRoute =
+  FrontendBlogCategorySlugIndexRouteImport.update({
+    id: '/blog/category/$slug/',
+    path: '/blog/category/$slug/',
+    getParentRoute: () => FrontendRoute,
+  } as any)
+const FrontendBlogCategorySlugPagePageRoute =
+  FrontendBlogCategorySlugPagePageRouteImport.update({
+    id: '/blog/category/$slug/page/$page',
+    path: '/blog/category/$slug/page/$page',
+    getParentRoute: () => FrontendRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof FrontendIndexRoute
@@ -108,11 +146,17 @@ export interface FileRoutesByFullPath {
   '/$': typeof FrontendSplatRoute
   '/$slug': typeof FrontendSlugRoute
   '/search': typeof FrontendSearchRoute
+  '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/img/$': typeof ImgSplatRoute
+  '/blog/$slug': typeof FrontendBlogSlugRoute
   '/dev/blocks': typeof FrontendDevBlocksRoute
   '/admin/$': typeof PayloadAdminSplatRoute
   '/api/$': typeof PayloadApiSplatRoute
+  '/blog/': typeof FrontendBlogIndexRoute
   '/admin/': typeof PayloadAdminIndexRoute
+  '/blog/page/$page': typeof FrontendBlogPagePageRoute
+  '/blog/category/$slug/': typeof FrontendBlogCategorySlugIndexRoute
+  '/blog/category/$slug/page/$page': typeof FrontendBlogCategorySlugPagePageRoute
 }
 export interface FileRoutesByTo {
   '/': typeof FrontendIndexRoute
@@ -123,11 +167,17 @@ export interface FileRoutesByTo {
   '/$': typeof FrontendSplatRoute
   '/$slug': typeof FrontendSlugRoute
   '/search': typeof FrontendSearchRoute
+  '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/img/$': typeof ImgSplatRoute
+  '/blog/$slug': typeof FrontendBlogSlugRoute
   '/dev/blocks': typeof FrontendDevBlocksRoute
   '/admin/$': typeof PayloadAdminSplatRoute
   '/api/$': typeof PayloadApiSplatRoute
+  '/blog': typeof FrontendBlogIndexRoute
   '/admin': typeof PayloadAdminIndexRoute
+  '/blog/page/$page': typeof FrontendBlogPagePageRoute
+  '/blog/category/$slug': typeof FrontendBlogCategorySlugIndexRoute
+  '/blog/category/$slug/page/$page': typeof FrontendBlogCategorySlugPagePageRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -140,12 +190,18 @@ export interface FileRoutesById {
   '/_frontend/$': typeof FrontendSplatRoute
   '/_frontend/$slug': typeof FrontendSlugRoute
   '/_frontend/search': typeof FrontendSearchRoute
+  '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/img/$': typeof ImgSplatRoute
   '/_frontend/': typeof FrontendIndexRoute
+  '/_frontend/blog/$slug': typeof FrontendBlogSlugRoute
   '/_frontend/dev/blocks': typeof FrontendDevBlocksRoute
   '/_payload/admin/$': typeof PayloadAdminSplatRoute
   '/_payload/api/$': typeof PayloadApiSplatRoute
+  '/_frontend/blog/': typeof FrontendBlogIndexRoute
   '/_payload/admin/': typeof PayloadAdminIndexRoute
+  '/_frontend/blog/page/$page': typeof FrontendBlogPagePageRoute
+  '/_frontend/blog/category/$slug/': typeof FrontendBlogCategorySlugIndexRoute
+  '/_frontend/blog/category/$slug/page/$page': typeof FrontendBlogCategorySlugPagePageRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -158,11 +214,17 @@ export interface FileRouteTypes {
     | '/$'
     | '/$slug'
     | '/search'
+    | '/blog/rss.xml'
     | '/img/$'
+    | '/blog/$slug'
     | '/dev/blocks'
     | '/admin/$'
     | '/api/$'
+    | '/blog/'
     | '/admin/'
+    | '/blog/page/$page'
+    | '/blog/category/$slug/'
+    | '/blog/category/$slug/page/$page'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -173,11 +235,17 @@ export interface FileRouteTypes {
     | '/$'
     | '/$slug'
     | '/search'
+    | '/blog/rss.xml'
     | '/img/$'
+    | '/blog/$slug'
     | '/dev/blocks'
     | '/admin/$'
     | '/api/$'
+    | '/blog'
     | '/admin'
+    | '/blog/page/$page'
+    | '/blog/category/$slug'
+    | '/blog/category/$slug/page/$page'
   id:
     | '__root__'
     | '/_frontend'
@@ -189,12 +257,18 @@ export interface FileRouteTypes {
     | '/_frontend/$'
     | '/_frontend/$slug'
     | '/_frontend/search'
+    | '/blog/rss.xml'
     | '/img/$'
     | '/_frontend/'
+    | '/_frontend/blog/$slug'
     | '/_frontend/dev/blocks'
     | '/_payload/admin/$'
     | '/_payload/api/$'
+    | '/_frontend/blog/'
     | '/_payload/admin/'
+    | '/_frontend/blog/page/$page'
+    | '/_frontend/blog/category/$slug/'
+    | '/_frontend/blog/category/$slug/page/$page'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -204,6 +278,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   DotwellKnownSplatRoute: typeof DotwellKnownSplatRoute
+  BlogRssDotxmlRoute: typeof BlogRssDotxmlRoute
   ImgSplatRoute: typeof ImgSplatRoute
 }
 
@@ -279,12 +354,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FrontendSearchRouteImport
       parentRoute: typeof FrontendRoute
     }
+    '/blog/rss.xml': {
+      id: '/blog/rss.xml'
+      path: '/blog/rss.xml'
+      fullPath: '/blog/rss.xml'
+      preLoaderRoute: typeof BlogRssDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/img/$': {
       id: '/img/$'
       path: '/img/$'
       fullPath: '/img/$'
       preLoaderRoute: typeof ImgSplatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_frontend/blog/': {
+      id: '/_frontend/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof FrontendBlogIndexRouteImport
+      parentRoute: typeof FrontendRoute
+    }
+    '/_frontend/blog/$slug': {
+      id: '/_frontend/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof FrontendBlogSlugRouteImport
+      parentRoute: typeof FrontendRoute
     }
     '/_frontend/dev/blocks': {
       id: '/_frontend/dev/blocks'
@@ -314,6 +410,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PayloadApiSplatRouteImport
       parentRoute: typeof PayloadRoute
     }
+    '/_frontend/blog/page/$page': {
+      id: '/_frontend/blog/page/$page'
+      path: '/blog/page/$page'
+      fullPath: '/blog/page/$page'
+      preLoaderRoute: typeof FrontendBlogPagePageRouteImport
+      parentRoute: typeof FrontendRoute
+    }
+    '/_frontend/blog/category/$slug/': {
+      id: '/_frontend/blog/category/$slug/'
+      path: '/blog/category/$slug'
+      fullPath: '/blog/category/$slug/'
+      preLoaderRoute: typeof FrontendBlogCategorySlugIndexRouteImport
+      parentRoute: typeof FrontendRoute
+    }
+    '/_frontend/blog/category/$slug/page/$page': {
+      id: '/_frontend/blog/category/$slug/page/$page'
+      path: '/blog/category/$slug/page/$page'
+      fullPath: '/blog/category/$slug/page/$page'
+      preLoaderRoute: typeof FrontendBlogCategorySlugPagePageRouteImport
+      parentRoute: typeof FrontendRoute
+    }
   }
 }
 
@@ -322,7 +439,12 @@ interface FrontendRouteChildren {
   FrontendSlugRoute: typeof FrontendSlugRoute
   FrontendSearchRoute: typeof FrontendSearchRoute
   FrontendIndexRoute: typeof FrontendIndexRoute
+  FrontendBlogSlugRoute: typeof FrontendBlogSlugRoute
   FrontendDevBlocksRoute: typeof FrontendDevBlocksRoute
+  FrontendBlogIndexRoute: typeof FrontendBlogIndexRoute
+  FrontendBlogPagePageRoute: typeof FrontendBlogPagePageRoute
+  FrontendBlogCategorySlugIndexRoute: typeof FrontendBlogCategorySlugIndexRoute
+  FrontendBlogCategorySlugPagePageRoute: typeof FrontendBlogCategorySlugPagePageRoute
 }
 
 const FrontendRouteChildren: FrontendRouteChildren = {
@@ -330,7 +452,12 @@ const FrontendRouteChildren: FrontendRouteChildren = {
   FrontendSlugRoute: FrontendSlugRoute,
   FrontendSearchRoute: FrontendSearchRoute,
   FrontendIndexRoute: FrontendIndexRoute,
+  FrontendBlogSlugRoute: FrontendBlogSlugRoute,
   FrontendDevBlocksRoute: FrontendDevBlocksRoute,
+  FrontendBlogIndexRoute: FrontendBlogIndexRoute,
+  FrontendBlogPagePageRoute: FrontendBlogPagePageRoute,
+  FrontendBlogCategorySlugIndexRoute: FrontendBlogCategorySlugIndexRoute,
+  FrontendBlogCategorySlugPagePageRoute: FrontendBlogCategorySlugPagePageRoute,
 }
 
 const FrontendRouteWithChildren = FrontendRoute._addFileChildren(
@@ -359,6 +486,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   DotwellKnownSplatRoute: DotwellKnownSplatRoute,
+  BlogRssDotxmlRoute: BlogRssDotxmlRoute,
   ImgSplatRoute: ImgSplatRoute,
 }
 export const routeTree = rootRouteImport
