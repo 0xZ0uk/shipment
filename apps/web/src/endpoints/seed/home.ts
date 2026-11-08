@@ -15,9 +15,15 @@ const layout: Layout = [
     links: [
       { link: { type: 'custom', url: '/admin', label: 'Open the admin', appearance: 'default' } },
       {
-        link: { type: 'custom', url: '#features', label: 'See what is inside', appearance: 'outline' },
+        link: {
+          type: 'custom',
+          url: '#features',
+          label: 'See what is inside',
+          appearance: 'outline',
+        },
       },
     ],
+    illustration: 'pageBuilder',
     section: { background: 'default', spacing: 'lg' },
   },
   {
@@ -91,6 +97,7 @@ const layout: Layout = [
     rows: [
       {
         eyebrow: 'Compose',
+        illustration: 'blockLibrary',
         title: 'Build pages from ready-made sections',
         richText: richText(
           paragraph(
@@ -105,16 +112,22 @@ const layout: Layout = [
       },
       {
         eyebrow: 'Edit',
+        illustration: 'onPage',
         title: 'Change copy right where it lives',
         richText: richText(
           paragraph(
             'Open "Edit on page" from the admin and type straight into the page. Visitors never download the editor.',
           ),
-          bulletList('Drafts with autosave', 'Live preview in the admin', 'Publish when it is ready'),
+          bulletList(
+            'Drafts with autosave',
+            'Live preview in the admin',
+            'Publish when it is ready',
+          ),
         ),
       },
       {
         eyebrow: 'Grow',
+        illustration: 'seoAb',
         title: 'Measure what works',
         richText: richText(
           paragraph(
@@ -166,7 +179,8 @@ const layout: Layout = [
       {
         icon: 'layers',
         title: 'Build the database',
-        description: 'pnpm web migrate creates the local D1 database from the committed migrations.',
+        description:
+          'pnpm web migrate creates the local D1 database from the committed migrations.',
       },
       {
         icon: 'wand',
@@ -202,7 +216,8 @@ const layout: Layout = [
         link: { type: 'custom', url: '#get-started', label: 'Get started' },
       },
     ],
-    footnote: 'The Worker is larger than the free plan allows, so hosting needs a paid Workers plan.',
+    footnote:
+      'The Worker is larger than the free plan allows, so hosting needs a paid Workers plan.',
     section: { background: 'default', spacing: 'lg', anchor: 'pricing' },
   },
   {
@@ -279,7 +294,8 @@ const layout: Layout = [
 
 /**
  * The template's own landing page, built from the page blocks (`src/blocks`). Seeded at `/` by
- * `POST /api/seed/home` (see `./index.ts`). No uploads: blocks show a placeholder without media.
+ * `POST /api/seed/home` (see `./index.ts`). No uploads: the hero and feature rows show product
+ * mockups drawn in code (`illustration`, `@/components/Mockups`).
  */
 export const homePage: RequiredDataFromCollectionSlug<'pages'> = {
   slug: 'home',

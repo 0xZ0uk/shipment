@@ -1,7 +1,7 @@
 import { linkGroup } from '@/fields/linkGroup'
 
 import { defineBlock } from '../shared/defineBlock'
-import { headingFields, mediaField } from '../shared/fields'
+import { headingFields, illustrationField, mediaField } from '../shared/fields'
 
 import { heroMeta } from './meta'
 import { heroThumbnail } from './thumbnail'
@@ -18,6 +18,13 @@ export const HeroConfig = defineBlock({
       admin: {
         description:
           'Shown below the text (Centered), beside it (Split) or behind it (Background image).',
+      },
+    }),
+    illustrationField({
+      admin: {
+        condition: (_, siblingData) => siblingData?.variant !== 'image',
+        description:
+          'A product mockup drawn in code, shown instead of the image (Centered and Split only). Wide mockups suit Centered.',
       },
     }),
   ],

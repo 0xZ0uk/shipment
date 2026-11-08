@@ -3,6 +3,8 @@ import React from 'react'
 import type { HeroBlock as HeroBlockProps } from '@/payload-types'
 
 import { CMSLink } from '@/components/Link'
+import { Illustration, isIllustration } from '@/components/Mockups/Illustration'
+import { illustrations } from '@/components/Mockups/options'
 import { BlockMedia } from '@/components/Media/BlockMedia'
 import { SectionHeading } from '@/components/SectionHeading'
 import { cn } from '@/utilities/ui'
@@ -19,12 +21,7 @@ const HeroLinks: React.FC<{ className?: string; links?: Links | null }> = ({
   return (
     <div className={cn('flex flex-wrap gap-3', className)}>
       {links.map(({ id, link }, index) => (
-        <CMSLink
-          key={id ?? index}
-          {...link}
-          appearance={link.appearance ?? 'default'}
-          size="lg"
-        />
+        <CMSLink key={id ?? index} {...link} appearance={link.appearance ?? 'default'} size="lg" />
       ))}
     </div>
   )
@@ -33,12 +30,15 @@ const HeroLinks: React.FC<{ className?: string; links?: Links | null }> = ({
 export const HeroBlock: React.FC<HeroBlockProps> = ({
   description,
   eyebrow,
+  illustration,
   links,
   media,
   title,
   variant,
 }) => {
   const heading = { description, eyebrow, title }
+  // A mockup takes the media's place (not behind the text: the image variant ignores it).
+  const mockup = isIllustration(illustration) ? illustration : null
 
   if (variant === 'split') {
     return (
@@ -48,11 +48,15 @@ export const HeroBlock: React.FC<HeroBlockProps> = ({
             <SectionHeading {...heading} align="start" as="h1" className="max-w-xl" />
             <HeroLinks links={links} />
           </div>
-          <BlockMedia
-            className="aspect-4/3 w-full rounded-2xl border bg-muted shadow-sm"
-            priority
-            resource={media}
-          />
+          {mockup ? (
+            <Illustration name={mockup} />
+          ) : (
+            <BlockMedia
+              className="aspect-4/3 w-full rounded-2xl border bg-muted shadow-sm"
+              priority
+              resource={media}
+            />
+          )}
         </div>
       </div>
     )
@@ -97,12 +101,23 @@ export const HeroBlock: React.FC<HeroBlockProps> = ({
         <SectionHeading {...heading} as="h1" className="max-w-4xl" />
         <HeroLinks className="justify-center" links={links} />
       </div>
-      {media && typeof media === 'object' && (
-        <BlockMedia
-          className="mx-auto mt-12 aspect-video w-full max-w-5xl rounded-2xl border shadow-sm md:mt-16"
-          priority
-          resource={media}
+      {mockup ? (
+        <Illustration
+          className={cn(
+            'mx-auto mt-12 md:mt-16',
+            illustrations[mockup].slot === 'wide' ? 'max-w-5xl' : 'max-w-xl',
+          )}
+          name={mockup}
         />
+      ) : (
+        media &&
+        typeof media === 'object' && (
+          <BlockMedia
+            className="mx-auto mt-12 aspect-video w-full max-w-5xl rounded-2xl border shadow-sm md:mt-16"
+            priority
+            resource={media}
+          />
+        )
       )}
     </div>
   )

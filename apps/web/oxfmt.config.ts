@@ -3,6 +3,8 @@ import type { OxfmtConfig } from 'oxfmt'
 export default {
   ignorePatterns: [
     'src/app/_payload/importMap.js',
+    // Vendored Stageshow kit, kept as upstream wrote it.
+    'src/components/Mockups/kit/**',
     'src/payload-types.ts',
     'src/routeTree.gen.ts',
     'tsconfig.json',
