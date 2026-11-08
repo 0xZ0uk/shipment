@@ -21,7 +21,7 @@ type AnyHook = (args: Record<string, unknown>) => unknown
 
 function hooksOf(purger: EdgeCachePurger) {
   const config = edgeCachePurge(purger)({
-    collections: ['pages', 'media', 'seo-redirects', 'ab-manifest', 'users'].map(
+    collections: ['pages', 'media', 'sections', 'seo-redirects', 'ab-manifest', 'users'].map(
       (slug) => ({ slug, fields: [] }) as CollectionConfig,
     ),
     globals: ['header', 'footer'].map((slug) => ({ slug, fields: [] }) as GlobalConfig),
@@ -234,6 +234,16 @@ describe('other purge hooks', () => {
     expect(calls).toEqual([])
     await run(media.afterChange, { doc: { id: 1 }, operation: 'update', req })
     await run(media.afterDelete, { doc: { id: 1 }, req })
+    expect(calls).toEqual([['layout'], ['layout']])
+  })
+
+  it('purges the layout when a reusable section changes or goes, not when one is created', async () => {
+    const sections = hooksOf(purger).collection('sections')
+    const { req } = fakeReq(null)
+    await run(sections.afterChange, { doc: { id: 1 }, operation: 'create', req })
+    expect(calls).toEqual([])
+    await run(sections.afterChange, { doc: { id: 1 }, operation: 'update', req })
+    await run(sections.afterDelete, { doc: { id: 1 }, req })
     expect(calls).toEqual([['layout'], ['layout']])
   })
 

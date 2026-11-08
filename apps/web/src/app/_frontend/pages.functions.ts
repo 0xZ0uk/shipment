@@ -25,7 +25,7 @@ export type LoadPageResult = {
   livePreview: boolean
   /** Structured data nodes, serialized and safe to embed in `<script type="application/ld+json">`. */
   jsonLd: string[]
-  /** The request origin, used to build absolute URLs for Open Graph images. */
+  /** The request origin. Absolute URLs in the page (Open Graph image, canonical) use `siteUrl`. */
   origin: string
   page: RequiredDataFromCollectionSlug<'pages'> | null
   /**
@@ -144,7 +144,8 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
     const origin = getRequestUrl().origin
     const { cloudflareEnv } = await import('#cloudflare-runtime')
     // The configured public origin wins; the request origin is the fallback (dev, previews).
-    const siteUrl = (process.env.SITE_URL || cloudflareEnv.SITE_URL || origin).replace(/\/+$/, '')
+    const configuredSiteUrl = process.env.SITE_URL || cloudflareEnv.SITE_URL
+    const siteUrl = (configuredSiteUrl || origin).replace(/\/+$/, '')
     const gaMeasurementId = gaMeasurementIdFor(
       process.env.GA_MEASUREMENT_ID || cloudflareEnv.GA_MEASUREMENT_ID,
       draft,
@@ -201,6 +202,7 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
       onpageDraft,
       previewGrant: grant != null,
       setsCookie: getResponseHeader('Set-Cookie') != null,
+      siteUrlConfigured: Boolean(configuredSiteUrl),
       user: user != null,
     })
     if (publicView) {

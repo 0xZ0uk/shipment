@@ -26,6 +26,9 @@ import { normalizeRedirectPath } from '@/utilities/redirects'
  * - **Header, Footer**: `layout`.
  * - **Media** (update, delete): `layout`. A page shows a file's alt text and its URL, which
  *   carries the file's `updatedAt`; new uploads appear on no page yet.
+ * - **Sections** (update, delete): `layout`. A reusable section (the Global section block) shows
+ *   on any number of pages and goes live on save (no drafts); which pages use it isn't known
+ *   here, and a new section is on no page yet.
  * - **seo-redirects**: the `from` paths. A redirect only answers where no page exists, and such
  *   responses (redirects and 404s) are never cached; purged anyway, so a later change to that
  *   order can't serve stale pages.
@@ -181,7 +184,8 @@ const pagesHooks = (purger: EdgeCachePurger): Hooks => ({
   ],
 })
 
-const mediaHooks = (purger: EdgeCachePurger): Hooks => ({
+/** Update and delete purge `layout`: for documents any page may show (media, reusable sections). */
+const layoutHooks = (purger: EdgeCachePurger): Hooks => ({
   afterChange: [
     ({ doc, operation, req }) => {
       if (operation === 'update') purgeFor(purger, req, [LAYOUT_TAG])
@@ -248,7 +252,9 @@ const abManifestHooks = (purger: EdgeCachePurger): Hooks => ({
 
 const collectionHooks: Record<string, (purger: EdgeCachePurger) => Hooks> = {
   'ab-manifest': abManifestHooks,
-  media: mediaHooks,
+  media: layoutHooks,
   pages: pagesHooks,
+  // Reusable sections (the Global section block) show on any number of pages.
+  sections: layoutHooks,
   'seo-redirects': redirectHooks,
 }

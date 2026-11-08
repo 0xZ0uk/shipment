@@ -23,7 +23,8 @@ export const pageHead = (data?: LoadPageResult) => {
   const description = page.meta?.description
   const image = page.meta?.image
   const imageURL =
-    image && typeof image === 'object' && image.url ? `${data.origin}${image.url}` : undefined
+    // From `siteUrl`, not the request origin: cached HTML is shared across hostnames.
+    image && typeof image === 'object' && image.url ? `${data.siteUrl}${image.url}` : undefined
   const url = `${data.siteUrl}${pagePath(data.canonicalSlug)}`
 
   return {

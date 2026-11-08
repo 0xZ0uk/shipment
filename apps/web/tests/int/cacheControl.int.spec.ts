@@ -84,6 +84,7 @@ describe('isPublicPageView', () => {
     onpageDraft: false,
     previewGrant: false,
     setsCookie: false,
+    siteUrlConfigured: true,
     user: false,
   }
 
@@ -102,6 +103,7 @@ describe('isPublicPageView', () => {
     ['a draft', { draft: true }],
     ['an A/B experiment (or an unreadable manifest)', { abVaries: true }],
     ['a response that sets a cookie', { setsCookie: true }],
+    ['a site without SITE_URL (host-derived URLs)', { siteUrlConfigured: false }],
   ] satisfies [string, Partial<PageViewState>][])('stays private for %s', (_, change) => {
     expect(isPublicPageView({ ...anonymous, ...change })).toBe(false)
   })

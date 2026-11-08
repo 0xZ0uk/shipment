@@ -88,17 +88,25 @@ export type PageViewState = {
   setsCookie: boolean
   /** A published page is rendered (no 404, no redirect to a variant's original). */
   found: boolean
+  /**
+   * `SITE_URL` is configured. Workers Cache keys don't include the host, so cached HTML must read
+   * the same on every hostname the Worker answers (`workers.dev` and the custom domain): without
+   * `SITE_URL`, canonical URLs, `og:url` and JSON-LD fall back to the request's origin.
+   */
+  siteUrlConfigured: boolean
 }
 
 /**
  * True only when every viewer of this URL gets the same HTML: a full document of a published
- * page, for a request with no editor or preview state, no experiment and no cookie set. Decided
+ * page, for a request with no editor or preview state, no experiment and no cookie set, on a
+ * site whose public URL is configured (no host-derived URLs in the HTML). Decided
  * from the request's actual state, never from a URL marker. 404s stay private (the SEO 404
  * monitor counts them in the Worker), and so do server-function responses for now.
  */
 export const isPublicPageView = (s: PageViewState): boolean =>
   s.document &&
   s.found &&
+  s.siteUrlConfigured &&
   !s.draftParam &&
   !s.onpageDraft &&
   !s.markers &&

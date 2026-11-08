@@ -287,7 +287,7 @@ export default buildConfig({
     // composer at /admin/socials, Pinterest only. Disabled until SOCIALS_ENCRYPTION_KEY is set;
     // the schema is the same either way. The Cron Trigger runs its queue (src/server.ts).
     SocialsPlugin,
-    // Purges Workers Cache when page HTML changes: pages, header, footer, media, redirects and
+    // Purges Workers Cache when page HTML changes: pages, header, footer, media, sections, redirects and
     // the A/B manifest (src/plugins/edgeCachePurge.ts). After the plugins whose collections it
     // hooks (seo-redirects, ab-manifest). Does nothing under Node (no Workers Cache).
     edgeCachePurge(createEdgeCachePurger({ cache: edgeCache, waitUntil })),
