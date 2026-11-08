@@ -15,7 +15,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
-    "ignoreDeprecations": "6.0"
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@shipment/payload-seo-analyzer/client": ["./src/client.ts"]
+    }
   },
   "include": [
     "src/**/*.ts",
