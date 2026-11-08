@@ -1,7 +1,12 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import React from 'react'
 
-import type { LayoutBlock, LayoutBlockType } from '@/blocks/components'
+import {
+  blockLoaders,
+  preloadBlockTypes,
+  type LayoutBlock,
+  type LayoutBlockType,
+} from '@/blocks/components'
 import { blockMetas } from '@/blocks/gallery'
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { DraftModeProvider } from '@/blocks/shared/draftMode'
@@ -23,6 +28,9 @@ export const Route = createFileRoute('/_frontend/dev/blocks')({
   beforeLoad: () => {
     if (!import.meta.env.DEV) throw notFound()
   },
+  // Every block is on show, so load them all up front. (Not `blockMetas`: a route's loader is
+  // part of the main bundle, and the examples must stay out of it.)
+  loader: () => preloadBlockTypes(Object.keys(blockLoaders) as LayoutBlockType[]),
   head: () => ({ meta: [{ name: 'robots', content: 'noindex' }, { title: 'Blocks' }] }),
   component: BlockGallery,
 })
