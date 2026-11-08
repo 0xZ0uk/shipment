@@ -188,7 +188,7 @@ export const loadPage = createServerFn({ method: 'GET', strict: { output: false 
 
     // Workers Cache: every viewer of this URL gets the same HTML, so the edge may keep it,
     // tagged for the purge hooks (src/plugins/edgeCachePurge.ts). Decided from what this request
-    // actually carries, never from the URL. Anything else keeps the default `private, no-store`
+    // actually carries, never from the URL. Anything else keeps the default `private, no-cache`
     // (src/server.ts), or what was set above (drafts, experiments). Server-function calls
     // (client-side navigation re-running this loader) stay private for now: only full documents.
     const serverFnBase = process.env.TSS_SERVER_FN_BASE || '/_serverFn/'

@@ -6,7 +6,7 @@
  *
  * - **Responses are private unless they opt in.** `withDefaultCacheControl` (wrapped around
  *   `fetch` in `src/server.ts`) gives every response without a `Cache-Control` header
- *   `private, no-store`, and leaves a response that set its own alone.
+ *   `private, no-cache`, and leaves a response that set its own alone.
  * - **Only an anonymous, published page view opts in** (`isPublicPageView`, from `loadPage`),
  *   with `publicPageHeaders`: a short browser lifetime, a longer edge lifetime and `Cache-Tag`s
  *   that the purge hooks (`src/plugins/edgeCachePurge.ts`) clear on publish.
@@ -15,8 +15,14 @@
  * load it.
  */
 
-/** What every response gets unless it set its own `Cache-Control`. */
-export const PRIVATE_CACHE_CONTROL = 'private, no-store'
+/**
+ * What every response gets unless it set its own `Cache-Control`. `private` is what keeps it out
+ * of Workers Cache (and any shared cache); `no-cache` makes browsers revalidate before reusing it.
+ * Not `no-store`: Chrome never finishes a `no-store` response whose body the page doesn't read
+ * (fire-and-forget POSTs in the admin), which keeps requests open and the page from going idle.
+ * Responses that render drafts or experiments still set `private, no-store` themselves.
+ */
+export const PRIVATE_CACHE_CONTROL = 'private, no-cache'
 
 /** Tag on every page view: the header and footer render on all of them. */
 export const LAYOUT_TAG = 'layout'
@@ -49,7 +55,7 @@ export const publicPageHeaders = (path: string): Record<string, string> => ({
 })
 
 /**
- * Gives `response` `Cache-Control: private, no-store` unless it already has a `Cache-Control`
+ * Gives `response` `Cache-Control: private, no-cache` unless it already has a `Cache-Control`
  * header (pages that opted in, plugin files, media). Returns the same response when it can set
  * the header in place, a copy when its headers are immutable (a `fetch` result passed through).
  * WebSocket upgrades are returned as they are.

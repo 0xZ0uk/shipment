@@ -33,7 +33,7 @@ const startFetch = createStartHandler(defaultStreamHandler)
  * Responses are private unless they opt in. Workers Cache answers before the Worker runs, keys
  * by URL alone (cookies aren't part of the key) and stores a 200 without `Cache-Control` for two
  * hours, so the admin, the REST API, `/api/users/me` and server functions would be served to
- * everyone. Every response without a `Cache-Control` header gets `private, no-store`; one that
+ * everyone. Every response without a `Cache-Control` header gets `private, no-cache`; one that
  * set its own (a published page view from `loadPage`, plugin files, media) keeps it. See
  * src/utilities/cacheControl.ts.
  */
