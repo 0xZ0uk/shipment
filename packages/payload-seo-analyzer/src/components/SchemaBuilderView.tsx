@@ -175,12 +175,18 @@ function getSchemaTypes(t: DashboardTranslations): Record<string, SchemaTypeDef>
 // JSON-LD builder — converts form data to structured JSON-LD
 // ---------------------------------------------------------------------------
 
+/**
+ * What the form holds, by field name: strings, plus the `array` fields' rows (objects of strings).
+ * `any` on purpose: which keys exist depends on the schema type picked at runtime, and the
+ * builder below reads each by name after a truthiness check.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function buildJsonLd(type: string, values: Record<string, any>): Record<string, unknown> {
+type SchemaFormValues = Record<string, any>
+
+function buildJsonLd(type: string, values: SchemaFormValues): Record<string, unknown> {
   switch (type) {
     case 'LocalBusiness': {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result: Record<string, any> = {
+      const result: Record<string, unknown> = {
         '@context': 'https://schema.org',
         '@type': 'LocalBusiness',
       }
@@ -217,8 +223,7 @@ function buildJsonLd(type: string, values: Record<string, any>): Record<string, 
     }
 
     case 'Article': {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result: Record<string, any> = {
+      const result: Record<string, unknown> = {
         '@context': 'https://schema.org',
         '@type': 'Article',
       }
@@ -229,8 +234,7 @@ function buildJsonLd(type: string, values: Record<string, any>): Record<string, 
       if (values.dateModified) result.dateModified = values.dateModified
 
       if (values.authorName) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const author: Record<string, any> = { '@type': 'Person', name: values.authorName }
+        const author: Record<string, unknown> = { '@type': 'Person', name: values.authorName }
         // Author entity disambiguation (E-E-A-T) — comma/newline separated profile URLs.
         const sameAs = String(values.authorSameAs || '').split(/[,\n]/).map((x: string) => x.trim()).filter(Boolean)
         if (sameAs.length > 0) author.sameAs = sameAs
@@ -251,8 +255,7 @@ function buildJsonLd(type: string, values: Record<string, any>): Record<string, 
     }
 
     case 'Product': {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result: Record<string, any> = {
+      const result: Record<string, unknown> = {
         '@context': 'https://schema.org',
         '@type': 'Product',
       }
@@ -302,8 +305,7 @@ function buildJsonLd(type: string, values: Record<string, any>): Record<string, 
 
     case 'HowTo': {
       const steps = (values.steps || []) as Array<{ name: string; text: string; image?: string }>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result: Record<string, any> = {
+      const result: Record<string, unknown> = {
         '@context': 'https://schema.org',
         '@type': 'HowTo',
       }
@@ -321,8 +323,7 @@ function buildJsonLd(type: string, values: Record<string, any>): Record<string, 
     }
 
     case 'Organization': {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result: Record<string, any> = {
+      const result: Record<string, unknown> = {
         '@context': 'https://schema.org',
         '@type': 'Organization',
       }
@@ -353,8 +354,7 @@ function buildJsonLd(type: string, values: Record<string, any>): Record<string, 
     }
 
     case 'Event': {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result: Record<string, any> = {
+      const result: Record<string, unknown> = {
         '@context': 'https://schema.org',
         '@type': 'Event',
       }
@@ -540,8 +540,7 @@ export function SchemaBuilderView() {
 
   const [mode, setMode] = useState<'manual' | 'page'>('manual')
   const [selectedType, setSelectedType] = useState<string>('LocalBusiness')
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [values, setValues] = useState<Record<string, any>>({})
+  const [values, setValues] = useState<SchemaFormValues>({})
   const [toast, setToast] = useState<string | null>(null)
 
   const schemaTypes = useMemo(() => getSchemaTypes(t), [t])
@@ -559,8 +558,7 @@ export function SchemaBuilderView() {
   }, [])
 
   // Update an array field item
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const updateArrayItem = useCallback((arrayName: string, index: number, fieldName: string, value: any) => {
+  const updateArrayItem = useCallback((arrayName: string, index: number, fieldName: string, value: unknown) => {
     setValues((prev) => {
       const arr = [...(prev[arrayName] || [])]
       if (!arr[index]) arr[index] = {}

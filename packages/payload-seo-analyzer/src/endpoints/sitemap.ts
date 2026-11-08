@@ -43,6 +43,23 @@ function sitemapMaxDocs(): number {
 /** Document fields the sitemap reads (see the loop in the handler). */
 export const SITEMAP_SELECT_PATHS = ['slug', 'updatedAt', '_status', 'noindex', 'meta.noindex']
 
+/** The `sitemap` group of the `seo-settings` document. */
+interface SitemapSettings {
+  excludedSlugs?: Array<{ slug: string }>
+  defaultChangefreq?: string
+  defaultPriority?: number
+  priorityOverrides?: Array<{ slugPattern: string; priority: number; changefreq?: string }>
+}
+
+/** The document fields the sitemap loop reads (`SITEMAP_SELECT_PATHS`). */
+interface SitemapDoc {
+  _status?: string
+  noindex?: boolean
+  meta?: { noindex?: boolean }
+  slug?: string
+  updatedAt?: string | number | Date
+}
+
 /** Escape special XML characters */
 function escapeXml(str: string): string {
   return str
@@ -118,20 +135,15 @@ export function createSitemapHandler(
         limit: 1,
         overrideAccess: true,
       })
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const config = settingsResult.docs[0] as Record<string, any> | undefined
-      const sitemapConfig = config?.sitemap || {}
+      const config = settingsResult.docs[0] as { sitemap?: SitemapSettings } | undefined
+      const sitemapConfig: SitemapSettings = config?.sitemap || {}
 
       const excludedSlugs: string[] = (sitemapConfig.excludedSlugs || []).map(
-        (entry: { slug: string }) => entry.slug,
+        (entry) => entry.slug,
       )
       const defaultChangefreq: string = sitemapConfig.defaultChangefreq || 'weekly'
       const defaultPriority: number = sitemapConfig.defaultPriority ?? 0.5
-      const priorityOverrides: Array<{
-        slugPattern: string
-        priority: number
-        changefreq?: string
-      }> = sitemapConfig.priorityOverrides || []
+      const priorityOverrides = sitemapConfig.priorityOverrides || []
 
       // Fetch all published documents from target collections
       const allDocs = await fetchAllDocs(req.payload, {
@@ -145,7 +157,8 @@ export function createSitemapHandler(
 
       const urls: SitemapUrl[] = []
 
-      for (const { doc, sourceSlug: collectionSlug } of allDocs) {
+      for (const { doc: rawDoc, sourceSlug: collectionSlug } of allDocs) {
+        const doc = rawDoc as SitemapDoc
         // Skip drafts
         if (doc._status === 'draft') continue
         // Skip documents the editor explicitly removed from indexing. sitemap.xml is a

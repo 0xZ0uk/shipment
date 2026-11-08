@@ -153,8 +153,13 @@ export function createLlmsTxtHandler(
       // Group indexable docs by collection → one section per collection.
       const bySection = new Map<string, LlmsTxtPage[]>()
       for (const { doc, sourceSlug } of fetched) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const d = doc as any
+        const d = doc as {
+          _status?: string
+          noindex?: boolean
+          slug?: string
+          title?: string
+          meta?: { noindex?: boolean; title?: string; description?: unknown }
+        }
         // Skip drafts / explicitly non-indexed docs.
         if (d._status && d._status !== 'published') continue
         if (d.noindex === true || d?.meta?.noindex === true) continue

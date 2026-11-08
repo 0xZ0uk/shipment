@@ -153,7 +153,7 @@ export function createKeywordResearchHandler(
       // user without the role silently gets the cached result instead of a 403.
       const noCache = url.searchParams.get('nocache') === '1' && isSeoAdminRequest(req)
       const CACHE_KEY = await keyFor('keyword-research', req)
-      const cached = noCache ? null : seoCache.get<any>(CACHE_KEY)
+      const cached = noCache ? null : seoCache.get<Record<string, unknown>>(CACHE_KEY)
       if (cached) {
         return Response.json({ ...cached, cached: true })
       }
@@ -173,16 +173,15 @@ export function createKeywordResearchHandler(
         // Yield periodically — Lexical extraction over many docs is CPU-heavy.
         if (kProcessed > 0 && kProcessed % 50 === 0) await new Promise<void>((resolve) => setImmediate(resolve))
         kProcessed++
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const d = doc as any
+        const d = doc as { id?: number | string; title?: string; slug?: string; focusKeyword?: string }
         const { pageText: fullText, analysis } = analyzeLoadedDocument(
           req.payload,
-          d,
+          doc,
           sourceType === 'global' ? { global: sourceSlug } : { collection: sourceSlug },
           { purpose: 'content' },
         )
         allDocs.push({
-          id: sourceType === 'global' ? sourceSlug : d.id,
+          id: sourceType === 'global' ? sourceSlug : (d.id as number | string),
           title: d.title || '(untitled)',
           slug: d.slug || '',
           collection: sourceType === 'global' ? `global:${sourceSlug}` : sourceSlug,

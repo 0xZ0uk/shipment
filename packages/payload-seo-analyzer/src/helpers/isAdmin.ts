@@ -21,14 +21,37 @@
  * `SEO_ADMIN_USER_COLLECTIONS=users,staff` (comma-separated slugs).
  */
 
+import type { PayloadRequest } from 'payload'
+
+/**
+ * What the gate reads from a request. Partial on purpose: the gate must fail CLOSED on
+ * a missing `req`, `user` or `payload` (mock requests in tests, non-sanitized configs),
+ * so every access below keeps its `?.` guard.
+ */
+export type SeoAdminRequest = Partial<Pick<PayloadRequest, 'user' | 'payload'>> | null | undefined
+
+/** The user as the gate sees it: Payload's authenticated user, or nothing. */
+export type SeoAdminUser = PayloadRequest['user'] | null | undefined
+
+/**
+ * The fields the gate reads off a user. Payload's generated user type has no `role` /
+ * `roles` (the host decides whether and how to model them), so they are read through
+ * this, as `unknown`: `collectRoleNames` accepts any shape.
+ */
+type RoleCarrier = { collection?: unknown; role?: unknown; roles?: unknown }
+
+/** Narrow a user to what the gate reads. The cast is the only place the roles are typed. */
+function asRoleCarrier(user: SeoAdminUser): RoleCarrier | null {
+  return user ? (user as RoleCarrier) : null
+}
+
 /**
  * Slugs accepted as "admin-panel users" for this request.
  * Empty array means "the host didn't tell us" (mock req in tests, non-sanitized
  * config) — callers then fall back to the legacy authenticated-only behaviour
  * rather than locking every admin out.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function adminUserCollections(req: any): string[] {
+function adminUserCollections(req: SeoAdminRequest): string[] {
   const fromEnv = process.env.SEO_ADMIN_USER_COLLECTIONS
   if (typeof fromEnv === 'string' && fromEnv.trim()) {
     return fromEnv
@@ -46,9 +69,8 @@ function adminUserCollections(req: any): string[] {
  * A user authenticated on ANOTHER auth collection (front-office customer,
  * member…) is rejected — that is the whole point of this helper.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isSeoPanelUser(req: any): boolean {
-  const user = req?.user
+export function isSeoPanelUser(req: SeoAdminRequest): boolean {
+  const user = asRoleCarrier(req?.user)
   if (!user) return false
   const userCollection = typeof user.collection === 'string' ? user.collection : undefined
   // Unknown origin collection → keep the historical behaviour (authenticated is enough).
@@ -103,8 +125,7 @@ function collectRoleNames(value: unknown, out: Set<string>, depth = 0): void {
  * `roles` select both fell through it, and every editor of such a host was promoted
  * to SEO admin.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function hasRoleScheme(user: any): boolean {
+function hasRoleScheme(user: RoleCarrier): boolean {
   return (
     (user.role !== undefined && user.role !== null) ||
     (user.roles !== undefined && user.roles !== null)
@@ -115,8 +136,8 @@ function hasRoleScheme(user: any): boolean {
  * Role gate. Prefer `isSeoAdminRequest(req)`: this one only sees the user object
  * and therefore cannot tell which auth collection it came from.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isSeoAdmin(user: any): boolean {
+export function isSeoAdmin(rawUser: SeoAdminUser): boolean {
+  const user = asRoleCarrier(rawUser)
   if (!user) return false
   const names = new Set<string>()
   collectRoleNames(user.role, names)
@@ -134,8 +155,8 @@ export function isSeoAdmin(user: any): boolean {
  * yields no name (a bare relationship id). Those users are denied — the safe answer —
  * but the operator deserves to know why, hence the one-shot warning below.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function hasOpaqueRole(user: any): boolean {
+function hasOpaqueRole(rawUser: SeoAdminUser): boolean {
+  const user = asRoleCarrier(rawUser)
   if (!user || !hasRoleScheme(user)) return false
   const names = new Set<string>()
   collectRoleNames(user.role, names)
@@ -147,8 +168,7 @@ function hasOpaqueRole(user: any): boolean {
 const warnedOpaqueRoles = new Set<string>()
 
 /** Full admin gate: admin-panel session AND admin role. Use this in endpoints. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isSeoAdminRequest(req: any): boolean {
+export function isSeoAdminRequest(req: SeoAdminRequest): boolean {
   if (!isSeoPanelUser(req)) return false
   const user = req?.user
   if (isSeoAdmin(user)) return true

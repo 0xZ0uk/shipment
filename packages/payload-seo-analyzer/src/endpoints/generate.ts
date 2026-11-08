@@ -83,10 +83,10 @@ export function createGenerateHandler(
       }
 
       // Parse request body
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let body: GenerateRequestBody
       try {
-        body = await (req as any).json()
+        // `json` is optional on the type; a request without it throws here, which is the 400 below.
+        body = (await req.json!()) as GenerateRequestBody
       } catch {
         return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
       }
