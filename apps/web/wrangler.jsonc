@@ -113,6 +113,14 @@
       "namespace_id": "1006",
       "simple": { "limit": 10, "period": 60 },
     },
+    // Site search queries (`GET /api/search` and the `/search` page, unauthenticated), per client
+    // IP. The header's palette sends one query per typing pause; this only stops a script. Generous
+    // enough for visitors behind one shared IP. See src/plugins/searchRateLimit.ts.
+    {
+      "name": "SEARCH_RATE_LIMIT",
+      "namespace_id": "1007",
+      "simple": { "limit": 60, "period": 60 },
+    },
   ],
   // The admin assistant (packages/payload-plugin-assistant): one Durable Object per conversation
   // (transcript, runs, approvals, stream log, in its own SQLite: nothing in D1) and one per user
@@ -202,6 +210,11 @@
           "name": "OAUTH_RATE_LIMIT_REGISTER",
           "namespace_id": "1106",
           "simple": { "limit": 10, "period": 60 },
+        },
+        {
+          "name": "SEARCH_RATE_LIMIT",
+          "namespace_id": "1107",
+          "simple": { "limit": 60, "period": 60 },
         },
       ],
       "durable_objects": {

@@ -33,15 +33,18 @@ import { seedHomeEndpoint } from './endpoints/seed'
 import { defaultLexical } from './fields/defaultLexical'
 import type { Page } from './payload-types'
 import { abMeasurementConfig } from './plugins/abMeasurement'
-import { abStorage } from './plugins/abTesting'
+import { abStorage, isAbVariant } from './plugins/abTesting'
 import { edgeCachePurge } from './plugins/edgeCachePurge'
 import { assistantAuditSink, assistantConversations, assistantTestModel } from './plugins/assistant'
 import { workersAssistantRateLimit } from './plugins/assistantRateLimit'
 import { limitVersions } from './plugins/limitVersions'
 import { oauthRateLimit } from './plugins/oauthRateLimit'
 import { r2SeoCacheStore } from './plugins/seoCacheStore'
+import { searchRateLimit } from './plugins/searchRateLimit'
 import { workersSeoRateLimit } from './plugins/seoRateLimit'
+import { siteSearch } from './plugins/siteSearch'
 import { SocialsPlugin } from './plugins/socials'
+import { siteSearchIndex } from './search/siteIndex'
 import { pagePath } from './utilities/pagePath'
 import { siteName } from './utilities/siteName'
 import { createEdgeCachePurger } from './utilities/edgeCache'
@@ -219,7 +222,7 @@ export default buildConfig({
       // own: leave them out of the sitemaps, llms.txt, IndexNow and the whole-site scans. The
       // sidebar still scores a variant an editor opens. Not `noindex` on the variant: its meta
       // is what a visitor bucketed into it gets at the original's URL.
-      excludeDocs: (doc) => doc._abVariantOf != null,
+      excludeDocs: isAbVariant,
       excludeDocsFields: ['_abVariantOf'],
       siteName,
       siteUrl: process.env.SITE_URL || cloudflare.SITE_URL || undefined,
@@ -302,6 +305,21 @@ export default buildConfig({
     // the A/B manifest (src/plugins/edgeCachePurge.ts). After the plugins whose collections it
     // hooks (seo-redirects, ab-manifest). Does nothing under Node (no Workers Cache).
     edgeCachePurge(createEdgeCachePurger({ cache: edgeCache, waitUntil })),
+    // Site search (src/plugins/siteSearch.ts): an FTS5 index in SEO_D1 (never the main D1),
+    // synced from published pages in the background, queried at `GET /api/search` by the
+    // header's palette and `/search`. Same exclusions as the sitemap: drafts, noindex and
+    // A/B variants.
+    siteSearch({
+      collections: {
+        pages: {
+          path: (doc) => (typeof doc.slug === 'string' && doc.slug ? pagePath(doc.slug) : null),
+          exclude: isAbVariant,
+        },
+      },
+      index: siteSearchIndex,
+      waitUntil,
+      rateLimit: searchRateLimit(cloudflare.SEARCH_RATE_LIMIT),
+    }),
     // Last, so the cap also covers collections the plugins above add.
     limitVersions({ max: 20 }),
   ],

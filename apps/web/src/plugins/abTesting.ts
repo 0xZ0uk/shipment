@@ -83,6 +83,12 @@ export const abStorage = payloadCollectionAdapter<AbVariant>({
   cacheTtl: CACHE_TTL,
 })
 
+/**
+ * Is this page an A/B variant (`_abVariantOf`)? Visitors reach a variant through its original's
+ * URL, never its own, so it stays out of the sitemaps, llms.txt and site search.
+ */
+export const isAbVariant = (doc: Record<string, unknown>): boolean => doc._abVariantOf != null
+
 export type AbRouting = {
   /**
    * The response may depend on the visitor's bucket (the page runs an experiment, or the
