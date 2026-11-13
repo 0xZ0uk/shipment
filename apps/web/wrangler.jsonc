@@ -8,6 +8,12 @@
   "observability": {
     "enabled": true,
   },
+  // The production site, served on a Custom Domain: the deploy creates its DNS record and
+  // certificate, so the domain's zone must be on the same Cloudflare account. Replace it with your
+  // domain, and `SITE_URL` in `.env.production` with its origin (README > Deployment). No
+  // workers.dev URL: the site answers on one origin only.
+  "routes": [{ "pattern": "shipment.pedrosantana.xyz", "custom_domain": true }],
+  "workers_dev": false,
   // Runs the scheduled Payload jobs (`scheduled` in src/server.ts). Every 5 minutes matches
   // the SEO analyzer's `auditCron`, which continues dashboard audits that paused between
   // steps; the other tasks have their own schedules on top of it.
@@ -172,6 +178,8 @@
     "staging": {
       "name": "shipment-staging",
       "workers_dev": true,
+      // `routes` would be inherited, and staging would claim the production domain.
+      "routes": [],
       // No scheduled jobs on staging (#116): `triggers` would be inherited, so the empty list
       // overrides it, and a deploy clears any schedule the Worker had. Staging is for trying
       // deploy-only behaviour by hand, and a cron would run the due Payload jobs on test data every
