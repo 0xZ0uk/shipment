@@ -161,7 +161,12 @@ Run these inside `apps/web`, or from the repo root as `pnpm web <command>` (e.g.
 
 See the [Collections](https://payloadcms.com/docs/configuration/collections) docs for details on how to extend this functionality.
 
-- **Users (Authentication):** auth-enabled collection with access to the admin panel. See the [Authentication](https://payloadcms.com/docs/authentication/overview#authentication-overview) docs.
+- **Users (Authentication):** auth-enabled collection with access to the admin panel. See the [Authentication](https://payloadcms.com/docs/authentication/overview#authentication-overview) docs. Each user has a role (`src/access/roles.ts`), set by an admin in the user's sidebar:
+  - **Admin:** everything, including adding users and changing roles, the seed endpoints and the SEO analyzer's site-wide tools (`/admin/seo`, redirects, settings), which its plugin keeps to the `admin` role.
+  - **Editor:** all content (pages, posts, sections, media, bylines, categories, folders, tags), the header and footer, Socials and form submissions.
+  - **Author:** writes blog posts and uploads media, and edits, publishes and deletes only what they created (Payload's `createdBy`). Can read the rest of the admin.
+
+  New users are authors. The first account is always an admin, and admins can't demote or delete their own account, so there's always one left. MCP clients, API keys and the assistant act as their user, with that user's role.
 - **Pages:** the website's pages, ported from Payload's `website` template. Each page has a hero (`src/heros`), a `layout` of blocks (`src/blocks`: Call to Action, Content, Media) and an SEO tab from `@payloadcms/plugin-seo`, analyzed by the workspace plugin `@shipment/payload-seo-analyzer` (score sidebar, `/admin/seo` dashboard, redirects, sitemap/robots under `/api/seo-plugin`). Pages have drafts with autosave, a preview button and live preview.
 - **Posts / Authors / Categories:** the blog. Posts have a title, excerpt, cover, rich-text `content`, `publishedAt`, authors and categories, the same SEO tab as Pages, drafts with autosave, live preview, on-page editing and a Socials tab. Authors (public bylines, not admin users) and categories are plain collections that anyone can read. `POST /api/seed/blog` (also run by `POST /api/seed/home`) adds example authors, categories and posts, skipping slugs that exist.
 - **Header / Footer (globals):** up to six navigation links each, pointing at a page or a custom URL.

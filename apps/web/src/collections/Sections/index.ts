@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { authenticated } from '@/access/authenticated'
+import { editors } from '@/access/roles'
 import { sectionBlockSlugs } from '@/blocks'
 
 /**
@@ -11,11 +11,11 @@ export const Sections: CollectionConfig = {
   slug: 'sections',
   labels: { singular: 'Reusable section', plural: 'Reusable sections' },
   access: {
-    create: authenticated,
-    delete: authenticated,
+    create: editors,
+    delete: editors,
     // Public on the pages that use it anyway.
     read: () => true,
-    update: authenticated,
+    update: editors,
   },
   admin: {
     defaultColumns: ['title', 'updatedAt'],

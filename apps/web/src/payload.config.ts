@@ -96,7 +96,7 @@ export default buildConfig({
     fromName: process.env.EMAIL_FROM_NAME || cloudflare.EMAIL_FROM_NAME || siteName,
   }),
   // POST /api/seed/home: the template's landing page as the homepage, plus example blog posts;
-  // POST /api/seed/blog: the blog posts alone (src/endpoints/seed).
+  // POST /api/seed/blog: the blog posts alone (src/endpoints/seed). Admins only.
   endpoints: [seedHomeEndpoint, seedBlogEndpoint],
   globals: [Header, Footer],
   secret,
@@ -196,7 +196,8 @@ export default buildConfig({
         serverOptions: { serverInfo: { name: 'Shipment' } },
       },
       // The consent page and `resource_name` use the server name above. Every user may connect a
-      // client (there are no roles); set `canConnect` to restrict it. Registration is public: the
+      // client, whatever their role: it acts as them, with their access (src/access/roles.ts); set
+      // `canConnect` to restrict it. Registration is public: the
       // plugin caps pending clients, and this limits it per IP (src/plugins/oauthRateLimit.ts).
       oauth: { rateLimit: oauthRateLimit(cloudflare.OAUTH_RATE_LIMIT_REGISTER) },
     }),

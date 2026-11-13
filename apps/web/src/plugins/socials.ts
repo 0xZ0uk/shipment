@@ -5,6 +5,7 @@ import type {
 } from '@shipment/payload-plugin-socials'
 
 import { cloudflareEnv as cloudflare } from '#cloudflare-runtime'
+import { hasRole } from '@/access/roles'
 import { pageSocialContext, postSocialContext } from '@/utilities/socialsPageSource'
 
 const encryptionKey = process.env.SOCIALS_ENCRYPTION_KEY || cloudflare.SOCIALS_ENCRYPTION_KEY || ''
@@ -22,8 +23,8 @@ const pinterestAppId = process.env.PINTEREST_APP_ID || cloudflare.PINTEREST_APP_
 const pinterestAppSecret = process.env.PINTEREST_APP_SECRET || cloudflare.PINTEREST_APP_SECRET || ''
 
 /**
- * A page's context for the composer. Runs for a logged-in admin user (the plugin's `authorize`
- * has already passed) and from the Cron Trigger (no user), so it reads with the Local API's
+ * A page's context for the composer. Runs for an editor or admin (the plugin's `authorize` has
+ * already passed) and from the Cron Trigger (no user), so it reads with the Local API's
  * access override. Without `SITE_URL` (dev, previews) links use the request's origin.
  */
 const pageSource: SourceContextResolver = async ({ id, payload, req }) => {
@@ -65,7 +66,7 @@ const postSource: SourceContextResolver = async ({ id, payload, req }) => {
  * - Pages and blog posts (`sources.page`, `sources.post`), Pinterest only. Pinterest turns on with its app credentials
  *   and a `SITE_URL` to build the OAuth redirect from. Facebook, Instagram and Google Business
  *   Profile are left out (disabled).
- * - Any logged-in admin user may publish and manage connections; there is no role field.
+ * - Editors and admins may publish and manage connections (`authorize`); authors can't.
  * - `assets.autoConvert` / `assets.normalize` stay off: they need sharp, which Workers can't run.
  * - The Cron Trigger runs the queue (`scheduled` in `src/server.ts`), with small drain batches
  *   to fit one invocation's CPU budget.
@@ -80,7 +81,7 @@ export const socialsOptions = {
   },
   assets: { autoConvert: false, normalize: false },
   authCollection: 'users',
-  authorize: ({ req }) => Boolean(req.user),
+  authorize: ({ req }) => hasRole(req.user, 'editor'),
   disabled: !encryptionKey,
   encryptionKey,
   platforms: {

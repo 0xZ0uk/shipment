@@ -26,7 +26,7 @@ export const seedHome = (getPayload: () => Payload) =>
       payload = getPayload()
       const user = await payload.create({
         collection: 'users',
-        data: { email: `seed-${stamp}@example.com`, password: 'seed-test-password' },
+        data: { email: `seed-${stamp}@example.com`, password: 'seed-test-password', role: 'admin' },
         overrideAccess: true,
       })
       userId = user.id
@@ -39,7 +39,7 @@ export const seedHome = (getPayload: () => Payload) =>
 
     afterAll(async () => {
       if (pageId) await payload.delete({ collection: 'pages', id: pageId, overrideAccess: true }).catch(() => undefined)
-      await payload.delete({ collection: 'users', id: userId, overrideAccess: true }).catch(() => undefined)
+      await payload.delete({ collection: 'users', id: userId, overrideAccess: true })
     })
 
     it('refuses anonymous requests', async () => {

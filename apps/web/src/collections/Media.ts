@@ -7,10 +7,17 @@ import {
 } from '@payloadcms/richtext-lexical'
 import { createFolderField, createTagField } from 'payload'
 
+import { authenticated } from '@/access/authenticated'
+import { editorsOrCreator } from '@/access/roles'
+
 export const Media: CollectionConfig = {
   slug: 'media',
+  // Every role uploads; authors edit and delete only their own uploads.
   access: {
+    create: authenticated,
+    delete: editorsOrCreator,
     read: () => true,
+    update: editorsOrCreator,
   },
   fields: [
     {

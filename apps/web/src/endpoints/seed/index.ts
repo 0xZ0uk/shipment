@@ -1,5 +1,7 @@
 import type { Endpoint, PayloadRequest, RequiredDataFromCollectionSlug } from 'payload'
 
+import { hasRole } from '@/access/roles'
+
 import { blogAuthors, blogCategories, blogPosts } from './blog'
 import { homePage, navigation } from './home'
 
@@ -116,14 +118,15 @@ export const seedBlog = async (req: PayloadRequest): Promise<SeedBlogResult> => 
 }
 
 /**
- * `POST /api/seed/blog`: the example authors, categories and posts (`seedBlog`). Signed-in users
- * only. Safe to repeat: existing slugs are skipped.
+ * `POST /api/seed/blog`: the example authors, categories and posts (`seedBlog`). Admins only.
+ * Safe to repeat: existing slugs are skipped.
  */
 export const seedBlogEndpoint: Endpoint = {
   path: '/seed/blog',
   method: 'post',
   handler: async (req) => {
     if (!req.user) return Response.json({ error: 'Sign in to seed the blog.' }, { status: 401 })
+    if (!hasRole(req.user, 'admin')) return Response.json({ error: 'Admins only.' }, { status: 403 })
     const created = await seedBlog(req)
     return Response.json({ created }, { status: 200 })
   },
@@ -133,7 +136,7 @@ export const seedBlogEndpoint: Endpoint = {
  * `POST /api/seed/home`: seeds the homepage (slug `home`, served at `/`) with the template's
  * landing page (`./home.ts`), links to its sections in an empty header and footer, and the
  * example blog posts (`seedBlog`, which skips what exists).
- * Signed-in users only. Answers 409 if a homepage already exists; `?overwrite=true` replaces
+ * Admins only. Answers 409 if a homepage already exists; `?overwrite=true` replaces
  * it (the header and footer are still only filled when empty).
  */
 export const seedHomeEndpoint: Endpoint = {
@@ -141,6 +144,7 @@ export const seedHomeEndpoint: Endpoint = {
   method: 'post',
   handler: async (req) => {
     if (!req.user) return Response.json({ error: 'Sign in to seed the homepage.' }, { status: 401 })
+    if (!hasRole(req.user, 'admin')) return Response.json({ error: 'Admins only.' }, { status: 403 })
 
     const overwrite = req.searchParams.get('overwrite') === 'true'
     const result = await seedPage(req, homePage, { overwrite })

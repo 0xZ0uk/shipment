@@ -62,7 +62,7 @@ export const seoSidebarParity = (getPayload: () => Payload) =>
 
       const admin = await payload.create({
         collection: 'users',
-        data: { email: `seo-parity-${stamp}@example.com`, password: 'parity-test-password' },
+        data: { email: `seo-parity-${stamp}@example.com`, password: 'parity-test-password', role: 'admin' },
         overrideAccess: true,
       })
       created.push({ collection: 'users', id: admin.id })

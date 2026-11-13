@@ -527,6 +527,10 @@ export interface Category {
  */
 export interface User {
   id: number;
+  /**
+   * Admins manage everything, including users. Editors manage all content and site settings. Authors write blog posts and upload media, and edit only what they created.
+   */
+  role: 'admin' | 'editor' | 'author';
   createdBy?: {
     relationTo: 'users';
     value: number | User;
@@ -2501,6 +2505,7 @@ export interface SectionsSelect<T extends boolean = true> {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  role?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;

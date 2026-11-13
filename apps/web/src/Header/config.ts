@@ -1,11 +1,14 @@
 import type { GlobalConfig } from 'payload'
 
+import { editors } from '@/access/roles'
+
 import { link } from '@/fields/link'
 
 export const Header: GlobalConfig = {
   slug: 'header',
   access: {
     read: () => true,
+    update: editors,
   },
   fields: [
     {

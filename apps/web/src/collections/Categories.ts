@@ -1,15 +1,15 @@
 import type { CollectionConfig } from 'payload'
 
-import { authenticated } from '@/access/authenticated'
+import { editors } from '@/access/roles'
 
 /** Post categories, each with an archive at `/blog/category/<slug>`. */
 export const Categories: CollectionConfig = {
   slug: 'categories',
   access: {
-    create: authenticated,
-    delete: authenticated,
+    create: editors,
+    delete: editors,
     read: () => true,
-    update: authenticated,
+    update: editors,
   },
   defaultPopulate: {
     title: true,

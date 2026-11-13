@@ -15,6 +15,7 @@ import * as migration_20261107_001439_mcp_oauth from './20261107_001439_mcp_oaut
 import * as migration_20261108_104515_cookie_consent from './20261108_104515_cookie_consent';
 import * as migration_20261108_114554_posts from './20261108_114554_posts';
 import * as migration_20261108_121955_localized_content from './20261108_121955_localized_content';
+import * as migration_20261113_132003_user_roles from './20261113_132003_user_roles';
 
 export const migrations = [
   {
@@ -100,6 +101,11 @@ export const migrations = [
   {
     up: migration_20261108_121955_localized_content.up,
     down: migration_20261108_121955_localized_content.down,
-    name: '20261108_121955_localized_content'
+    name: '20261108_121955_localized_content',
+  },
+  {
+    up: migration_20261113_132003_user_roles.up,
+    down: migration_20261113_132003_user_roles.down,
+    name: '20261113_132003_user_roles'
   },
 ];

@@ -4,6 +4,7 @@ import config from '@/payload.config'
 import { describe, it, beforeAll, expect } from 'vitest'
 
 import { reservedSlug } from './localD1/reservedSlug'
+import { roles } from './localD1/roles'
 import { seedHome } from './localD1/seedHome'
 import { seoSidebarParity } from './localD1/seoSidebarParity'
 import { siteSearch } from './localD1/siteSearch'
@@ -40,3 +41,4 @@ seedHome(() => payload)
 reservedSlug(() => payload)
 siteSearch(() => payload)
 socialsAtomicUpdate(() => payload)
+roles(() => payload)

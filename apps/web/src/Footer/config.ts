@@ -1,5 +1,7 @@
 import type { GlobalConfig } from 'payload'
 
+import { editors } from '@/access/roles'
+
 import { defaultCookieConsentCopy } from '@/components/CookieConsent/copy'
 import { link } from '@/fields/link'
 
@@ -7,6 +9,7 @@ export const Footer: GlobalConfig = {
   slug: 'footer',
   access: {
     read: () => true,
+    update: editors,
   },
   fields: [
     {
