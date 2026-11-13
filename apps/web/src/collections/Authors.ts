@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { authenticated } from '@/access/authenticated'
+import { editors } from '@/access/roles'
 import { mediaField } from '@/blocks/shared/fields'
 
 /**
@@ -10,10 +10,10 @@ import { mediaField } from '@/blocks/shared/fields'
 export const Authors: CollectionConfig = {
   slug: 'authors',
   access: {
-    create: authenticated,
-    delete: authenticated,
+    create: editors,
+    delete: editors,
     read: () => true,
-    update: authenticated,
+    update: editors,
   },
   defaultPopulate: {
     name: true,

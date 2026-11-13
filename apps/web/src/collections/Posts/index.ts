@@ -10,6 +10,7 @@ import {
 
 import { authenticated } from '@/access/authenticated'
 import { authenticatedOrPublished } from '@/access/authenticatedOrPublished'
+import { editorsOrCreator } from '@/access/roles'
 import { blockRichText, mediaField } from '@/blocks/shared/fields'
 import { populatePublishedAt } from '@/hooks/populatePublishedAt'
 import { localizePath } from '@/i18n/locales'
@@ -30,11 +31,12 @@ const previewPath = (slug: unknown, locale?: string) =>
  */
 export const Posts: CollectionConfig = {
   slug: 'posts',
+  // Every role writes posts; authors edit, publish and delete only the ones they created.
   access: {
     create: authenticated,
-    delete: authenticated,
+    delete: editorsOrCreator,
     read: authenticatedOrPublished,
-    update: authenticated,
+    update: editorsOrCreator,
   },
   defaultPopulate: {
     title: true,

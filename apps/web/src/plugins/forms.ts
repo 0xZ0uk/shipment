@@ -1,5 +1,6 @@
 import type { Config, Endpoint, PayloadRequest, Plugin } from 'payload'
 
+import { hasRole } from '@/access/roles'
 import { signupsCsv, submissionsCsv } from '@/forms/csv'
 import { handleFormSubmission } from '@/forms/handler'
 import { parseRecipients } from '@/forms/notify'
@@ -43,9 +44,12 @@ export const formsStore = (env: FormsEnv): FormsStore => {
   return store
 }
 
-/** Admin users only: a session on another auth collection doesn't count. */
+/**
+ * Editors and admins (the submissions hold visitors' names and emails); a session on another
+ * auth collection doesn't count.
+ */
 export const isFormsAdmin = (req: Pick<PayloadRequest, 'payload' | 'user'>) =>
-  Boolean(req.user) && req.user?.collection === req.payload.config.admin?.user
+  hasRole(req.user, 'editor') && req.user?.collection === req.payload.config.admin?.user
 
 const EXPORT_PAGE = 1000
 const EXPORT_MAX_ROWS = 50_000

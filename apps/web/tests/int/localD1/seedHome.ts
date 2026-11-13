@@ -26,7 +26,7 @@ export const seedHome = (getPayload: () => Payload) =>
       payload = getPayload()
       const user = await payload.create({
         collection: 'users',
-        data: { email: `seed-${stamp}@example.com`, password: 'seed-test-password' },
+        data: { email: `seed-${stamp}@example.com`, password: 'seed-test-password', role: 'admin' },
         overrideAccess: true,
       })
       userId = user.id

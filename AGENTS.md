@@ -33,6 +33,10 @@ Pages are built from section blocks in `apps/web/src/blocks/` (Hero, Pricing, FA
 - **Storage**: blocks are stored as JSON (`blocksAsJSON` in `payload.config.ts`), so new blocks and nested arrays add no D1 tables. A new block still changes the schema snapshot: run `pnpm web migrate:create`.
 - **Check your work**: `pnpm web generate:types`, `pnpm web typecheck`, `pnpm web lint`, `pnpm web test:int` (`tests/int/blocks.int.spec.tsx` renders every block's example in every variant, and with empty data). With `pnpm web dev`, `/dev/blocks` shows every block (`?block=<slug>`, `?background=dark`).
 
+## Access and roles
+
+Users have one role: `admin`, `editor` or `author` (`apps/web/src/access/roles.ts`, where each role's reach is documented). Give every new collection and global explicit `create`/`update`/`delete` access built from those helpers (`editors`, `admins`, `editorsOrCreator`…): Payload's default lets any signed-in user, authors included, write. Custom endpoints and admin views check `hasRole(req.user, …)`, not just `req.user`. `createdBy` (Payload 4's authorship field, on every collection) is what "authors edit their own" keys on; don't add an owner field.
+
 ## Cloudflare D1 / R2
 
 The app runs on Cloudflare Workers with D1 (10 GB max per database) and R2. Keep D1 small:

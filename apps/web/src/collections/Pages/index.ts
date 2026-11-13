@@ -8,8 +8,8 @@ import {
   PreviewField,
 } from '@payloadcms/plugin-seo/fields'
 
-import { authenticated } from '@/access/authenticated'
 import { authenticatedOrPublished } from '@/access/authenticatedOrPublished'
+import { editors } from '@/access/roles'
 import { pageBlockSlugs } from '@/blocks'
 import { populatePublishedAt } from '@/hooks/populatePublishedAt'
 import { defaultLocale, isLocale, localizePath } from '@/i18n/locales'
@@ -27,10 +27,10 @@ const previewPath = (slug: unknown, locale?: string) =>
 export const Pages: CollectionConfig = {
   slug: 'pages',
   access: {
-    create: authenticated,
-    delete: authenticated,
+    create: editors,
+    delete: editors,
     read: authenticatedOrPublished,
-    update: authenticated,
+    update: editors,
   },
   // What's populated by default when a page is referenced (links, relationships).
   // https://payloadcms.com/docs/queries/select#defaultpopulate-collection-config-property

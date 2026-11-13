@@ -5,6 +5,8 @@ import config from '../../src/payload.config.js'
 export const testUser = {
   email: 'dev@payloadcms.com',
   password: 'test',
+  // Admin, so e2e specs can reach everything (src/access/roles.ts).
+  role: 'admin' as const,
 }
 
 /**
