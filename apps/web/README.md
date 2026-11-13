@@ -40,6 +40,8 @@ Put the production secret in `.env.production.local` (`PAYLOAD_SECRET=...`), or 
 > [!IMPORTANT]
 > [`wrangler.jsonc`](./wrangler.jsonc) ships with the `database_id` of the template's own D1 database, which your account can't reach. **Replace it with the `database_id` printed by `d1 create`** before you run `pnpm run deploy`, or the migrations and the deploy fail.
 
+The Worker is served on a [Custom Domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/), the template's own `shipment.pedrosantana.xyz` (`routes` in `wrangler.jsonc`), with no workers.dev URL. Replace it with yours, and `SITE_URL` in [`.env.production`](./.env.production) with the same origin: the sitemap, canonical URLs, the RSS feed and the Pinterest OAuth redirect are built from it. The domain's zone must be on the same Cloudflare account; the deploy creates the DNS record and the certificate. A hostname that already has a DNS record makes the deploy fail, so delete that record first.
+
 Then add the bucket's lifecycle rule. It expires the SEO analyzer's cache objects under `seo-analyzer/cache/` after 7 days, so keys left behind by an old config or locale don't pile up. Cache entries live 15 minutes anyway; if a key that's still in use expires (an invalidation marker on a site with no edits for a week), the next request just rebuilds.
 
 ```bash
