@@ -18,7 +18,7 @@ const retryBusy = (run: () => Promise<unknown>) => expect(run).toPass({ timeout:
 
 const deleteTestUser = async () => {
   const payload = await getPayload({ config })
-  await payload.delete({
+  const { errors } = await payload.delete({
     collection: 'users',
     where: {
       email: {
@@ -27,6 +27,8 @@ const deleteTestUser = async () => {
     },
     overrideAccess: true,
   })
+  // A delete by `where` reports a refused document here instead of throwing.
+  if (errors.length) throw new Error(`Couldn't delete the test user: ${errors[0]?.message}`)
   return payload
 }
 

@@ -5,7 +5,7 @@
  *   pnpm search:reindex           # local databases in .wrangler/state
  *   pnpm search:reindex:remote    # the real databases (after `pnpm run deploy`)
  *
- * Signed-in users can do the same on a running site with `POST /api/search/reindex`, one batch
+ * Admins can do the same on a running site with `POST /api/search/reindex`, one batch
  * per request (follow `next` until it is null).
  */
 import { getPayload } from 'payload'

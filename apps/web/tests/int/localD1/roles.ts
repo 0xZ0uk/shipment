@@ -18,7 +18,7 @@ type Actor = User & { collection: 'users' }
 export const roles = (getPayload: () => Payload) =>
   describe('roles', () => {
     let payload: Payload
-    const actors = {} as Record<'admin' | 'editor' | 'author' | 'otherAuthor', Actor>
+    const actors = {} as Record<'admin' | 'otherAdmin' | 'editor' | 'author' | 'otherAuthor', Actor>
     const created: Array<{ collection: 'pages' | 'posts' | 'users'; id: number }> = []
 
     const as = (user: Actor) => ({ user, overrideAccess: false }) as const
@@ -37,14 +37,16 @@ export const roles = (getPayload: () => Payload) =>
         actors[key] = { ...user, collection: 'users' }
       }
       await make('admin', 'admin')
+      await make('otherAdmin', 'admin')
       await make('editor', 'editor')
       await make('author', 'author')
       await make('otherAuthor', 'author')
     })
 
     afterAll(async () => {
+      // No `user`: a trusted call, which the admin self-guard doesn't apply to.
       for (const { collection, id } of created.reverse()) {
-        await payload.delete({ collection, id, overrideAccess: true }).catch(() => undefined)
+        await payload.delete({ collection, id, overrideAccess: true })
       }
     })
 
@@ -172,6 +174,41 @@ export const roles = (getPayload: () => Payload) =>
         ...as(actors.admin),
       })
       expect(promoted.role).toBe('editor')
+    })
+
+    it("doesn't let admins demote or delete their own account", async () => {
+      await expect(
+        payload.update({ collection: 'users', id: actors.admin.id, data: { role: 'editor' }, ...as(actors.admin) }),
+      ).rejects.toMatchObject({ data: { errors: [{ path: 'role' }] } })
+      await expect(payload.delete({ collection: 'users', id: actors.admin.id, ...as(actors.admin) })).rejects.toThrow(
+        'own admin account',
+      )
+
+      // A bulk edit or delete of every admin, the acting one included, still leaves the acting one.
+      const everyAdmin = { id: { in: [actors.admin.id, actors.otherAdmin.id] } }
+      const demoted = await payload.update({
+        collection: 'users',
+        where: everyAdmin,
+        data: { role: 'editor' },
+        ...as(actors.admin),
+      })
+      expect(demoted.docs.map(({ id }) => id)).toEqual([actors.otherAdmin.id])
+      expect(demoted.errors.map(({ id }) => id)).toEqual([actors.admin.id])
+
+      await payload.update({
+        collection: 'users',
+        id: actors.otherAdmin.id,
+        data: { role: 'admin' },
+        ...as(actors.admin),
+      })
+      const removed = await payload.delete({ collection: 'users', where: everyAdmin, ...as(actors.admin) })
+      expect(removed.errors.map(({ id }) => id)).toEqual([actors.admin.id])
+      const left = await payload.find({ collection: 'users', depth: 0, where: everyAdmin, overrideAccess: true })
+      expect(left.docs.map(({ id, role }) => ({ id, role }))).toEqual([{ id: actors.admin.id, role: 'admin' }])
+      created.splice(
+        created.findIndex(({ collection, id }) => collection === 'users' && id === actors.otherAdmin.id),
+        1,
+      )
     })
 
     it('keeps the seed endpoints to admins', async () => {

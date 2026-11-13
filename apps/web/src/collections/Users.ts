@@ -14,18 +14,9 @@ import {
   adminsOrSelf,
   DEFAULT_ROLE,
   editorsOrSelf,
+  hasRole,
   roleOptions,
 } from '@/access/roles'
-
-const otherAdmins = async (req: PayloadRequest, id: number | string) =>
-  (
-    await req.payload.count({
-      collection: 'users',
-      where: { and: [{ role: { equals: 'admin' } }, { id: { not_equals: id } }] },
-      overrideAccess: true,
-      req,
-    })
-  ).totalDocs
 
 /** The first account (from "Create first user" or a seed) is an admin, whatever was sent. */
 const firstUserIsAdmin: FieldHook = async ({ operation, req, value }) => {
@@ -34,32 +25,31 @@ const firstUserIsAdmin: FieldHook = async ({ operation, req, value }) => {
   return totalDocs === 0 ? 'admin' : value
 }
 
-/** Someone must keep the keys: the last admin can't be demoted… */
-const keepAnAdmin: CollectionBeforeChangeHook = async ({ data, operation, originalDoc, req }) => {
-  if (operation !== 'update' || originalDoc?.role !== 'admin') return data
-  if (data.role === undefined || data.role === 'admin') return data
-  if ((await otherAdmins(req, originalDoc.id)) === 0) {
-    throw new ValidationError({
-      collection: 'users',
-      errors: [{ message: 'Make another user an admin first.', path: 'role' }],
-      req,
-    })
+/** The account acting on itself. Trusted calls with no user (seeds, scripts, tests) never are. */
+const isSelf = (req: PayloadRequest, id: number | string | undefined) =>
+  req.user != null && id != null && String(req.user.id) === String(id)
+
+/*
+ * Someone must keep the keys: admins can't demote or delete their own account. Only admins change
+ * roles or delete users, so whoever does it is still an admin afterwards. Checked per document,
+ * with no count of the other admins, so a bulk edit or delete of every admin can't race past it.
+ */
+
+const keepOwnAdminRole: CollectionBeforeChangeHook = ({ data, operation, originalDoc, req }) => {
+  if (operation !== 'update' || originalDoc?.role !== 'admin' || !isSelf(req, originalDoc.id)) {
+    return data
   }
-  return data
+  if (data.role === undefined || data.role === 'admin') return data
+  throw new ValidationError({
+    collection: 'users',
+    errors: [{ message: "You can't remove your own admin role. Ask another admin.", path: 'role' }],
+    req,
+  })
 }
 
-/** …or deleted. */
-const keepAnAdminOnDelete: CollectionBeforeDeleteHook = async ({ id, req }) => {
-  const user = await req.payload.findByID({
-    collection: 'users',
-    id,
-    depth: 0,
-    overrideAccess: true,
-    req,
-    select: { role: true },
-  })
-  if (user.role === 'admin' && (await otherAdmins(req, id)) === 0) {
-    throw new APIError('The last admin cannot be deleted. Make another user an admin first.', 400)
+const keepOwnAdminAccount: CollectionBeforeDeleteHook = ({ id, req }) => {
+  if (isSelf(req, id) && hasRole(req.user, 'admin')) {
+    throw new APIError("You can't delete your own admin account. Ask another admin.", 400)
   }
 }
 
@@ -84,8 +74,8 @@ export const Users: CollectionConfig = {
     useAPIKey: true,
   },
   hooks: {
-    beforeChange: [keepAnAdmin],
-    beforeDelete: [keepAnAdminOnDelete],
+    beforeChange: [keepOwnAdminRole],
+    beforeDelete: [keepOwnAdminAccount],
   },
   fields: [
     // Email added by default

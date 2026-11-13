@@ -10,6 +10,7 @@ import type {
 
 import { isListedDoc, searchTextFromDoc } from '@shipment/payload-seo-analyzer'
 
+import { hasRole } from '@/access/roles'
 import { defaultLocale, isMultilingual, type Locale, locales, localizePath } from '@/i18n/locales'
 import { readLocale, requestLocale, translatedLocales } from '@/i18n/server'
 import { MAX_QUERY_LENGTH } from '@/search/matchQuery'
@@ -398,8 +399,8 @@ const searchEndpoint = (options: SiteSearchOptions): Endpoint => ({
 })
 
 /**
- * `POST /api/search/reindex?collection=<slug>&page=<n>`: one batch of the backfill, for
- * signed-in users (`ReindexStep`). Without parameters it starts at the first page of the first
+ * `POST /api/search/reindex?collection=<slug>&page=<n>`: one batch of the backfill, for admins
+ * (`ReindexStep`). Without parameters it starts at the first page of the first
  * collection; call it again with `next` until `next` is null. One batch per request keeps each
  * within a Worker's limits; `pnpm search:reindex` runs the whole backfill at once.
  */
@@ -408,6 +409,7 @@ const reindexEndpoint: Endpoint = {
   method: 'post',
   handler: async (req: PayloadRequest) => {
     if (!req.user) return json({ error: 'Unauthorized' }, 401)
+    if (!hasRole(req.user, 'admin')) return json({ error: 'Admins only.' }, 403)
     const params = req.searchParams ?? new URL(req.url ?? '', 'http://localhost').searchParams
     const { collections } = optionsOf(req.payload)
     const collection = params.get('collection') ?? Object.keys(collections)[0]
