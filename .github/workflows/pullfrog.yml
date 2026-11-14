@@ -55,7 +55,7 @@ jobs:
       - name: Run agent
         # Pinned to a commit (bumped by Dependabot). The agent itself still comes from npm at
         # ^<version>, so patch releases arrive without a bump.
-        uses: pullfrog/pullfrog@0613df0079954102a9727e833b1e4da229b8f440 # v0.1.122
+        uses: pullfrog/pullfrog@88bcc3d4bb26951b99fafe09f65d90d20d5b6d62 # v0.1.126
         with:
           prompt: ${{ inputs.prompt }}
           # Edited: pinned model (see the header).
